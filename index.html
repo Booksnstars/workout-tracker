@@ -363,6 +363,9 @@
   <ul class="pb-list" id="pb-list"></ul>
 
   <h2 style="margin-top:28px; margin-bottom:12px;">Class Attendance</h2>
+  <select id="class-attendance-select" onchange="renderClassChart()" style="margin-bottom:16px;">
+    <option value="">All classes</option>
+  </select>
   <div id="class-chart-wrap" style="background:#1a1a1a; border:1px solid #2a2a2a; border-radius:10px; padding:16px; margin-bottom:8px;">
     <canvas id="class-chart"></canvas>
   </div>
@@ -680,60 +683,71 @@
     const classes = await loadClasses();
     const wrap = document.getElementById('class-chart-wrap');
     const empty = document.getElementById('class-chart-empty');
+    const select = document.getElementById('class-attendance-select');
+
+    // Populate dropdown with unique class names
+    const classNames = [...new Set(classes.map(c => c.class_name))].sort();
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">All classes</option>' +
+      classNames.map(n => `<option value="${escHtml(n)}" ${n === currentVal ? 'selected' : ''}>${escHtml(n)}</option>`).join('');
 
     if (classes.length === 0) {
       wrap.style.display = 'none';
       empty.style.display = 'block';
       return;
     }
+
+    const selectedClass = select.value;
+    const filtered = selectedClass ? classes.filter(c => c.class_name === selectedClass) : classes;
+
+    if (filtered.length === 0) {
+      wrap.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+
     wrap.style.display = 'block';
     empty.style.display = 'none';
 
-    // Count classes attended per date
-    const countsByDate = {};
-    const tooltipNames = {};
-    classes.forEach(c => {
-      countsByDate[c.date] = (countsByDate[c.date] || 0) + 1;
-      tooltipNames[c.date] = tooltipNames[c.date] ? tooltipNames[c.date] + ', ' + c.class_name : c.class_name;
+    // Group by month (YYYY-MM)
+    const countsByMonth = {};
+    filtered.forEach(c => {
+      const month = c.date.slice(0, 7);
+      countsByMonth[month] = (countsByMonth[month] || 0) + 1;
     });
 
-    const sortedDates = Object.keys(countsByDate).sort();
-    const labels = sortedDates.map(d => formatDate(d));
-    const data = sortedDates.map(d => countsByDate[d]);
-    const names = sortedDates.map(d => tooltipNames[d]);
+    const sortedMonths = Object.keys(countsByMonth).sort();
+    const labels = sortedMonths.map(m => {
+      const [year, month] = m.split('-');
+      return new Date(year, month - 1).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+    });
+    const data = sortedMonths.map(m => countsByMonth[m]);
 
     const ctx = document.getElementById('class-chart').getContext('2d');
     if (classChart) classChart.destroy();
     classChart = new Chart(ctx, {
-      type: 'bar',
+      type: 'line',
       data: {
         labels,
         datasets: [{
+          label: selectedClass || 'All classes',
           data,
-          backgroundColor: '#f97316',
-          borderRadius: 6
+          borderColor: '#f97316',
+          backgroundColor: 'rgba(249, 115, 22, 0.1)',
+          tension: 0.3,
+          pointBackgroundColor: '#f97316',
+          fill: true
         }]
       },
       options: {
         responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              title: (items) => items[0].label,
-              label: (item) => {
-                const idx = item.dataIndex;
-                return ' ' + names[idx];
-              }
-            }
-          }
-        },
+        plugins: { legend: { display: false } },
         scales: {
-          x: { ticks: { color: '#aaa', maxRotation: 45 }, grid: { color: '#2a2a2a' } },
+          x: { ticks: { color: '#aaa' }, grid: { color: '#2a2a2a' } },
           y: {
             ticks: { color: '#aaa', stepSize: 1 },
             grid: { color: '#2a2a2a' },
-            title: { display: true, text: 'Classes', color: '#888' },
+            title: { display: true, text: 'Classes attended', color: '#888' },
             beginAtZero: true
           }
         }
