@@ -689,15 +689,18 @@
     wrap.style.display = 'block';
     empty.style.display = 'none';
 
-    // Count sessions per class type
-    const counts = {};
+    // Count classes attended per date
+    const countsByDate = {};
+    const tooltipNames = {};
     classes.forEach(c => {
-      counts[c.class_name] = (counts[c.class_name] || 0) + 1;
+      countsByDate[c.date] = (countsByDate[c.date] || 0) + 1;
+      tooltipNames[c.date] = tooltipNames[c.date] ? tooltipNames[c.date] + ', ' + c.class_name : c.class_name;
     });
-    const labels = Object.keys(counts).sort();
-    const data = labels.map(l => counts[l]);
-    const palette = ['#f97316','#fb923c','#fdba74','#fcd34d','#86efac','#67e8f9','#a78bfa','#f472b6','#94a3b8','#34d399'];
-    const colours = labels.map((_, i) => palette[i % palette.length]);
+
+    const sortedDates = Object.keys(countsByDate).sort();
+    const labels = sortedDates.map(d => formatDate(d));
+    const data = sortedDates.map(d => countsByDate[d]);
+    const names = sortedDates.map(d => tooltipNames[d]);
 
     const ctx = document.getElementById('class-chart').getContext('2d');
     if (classChart) classChart.destroy();
@@ -707,19 +710,30 @@
         labels,
         datasets: [{
           data,
-          backgroundColor: colours,
+          backgroundColor: '#f97316',
           borderRadius: 6
         }]
       },
       options: {
         responsive: true,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: (items) => items[0].label,
+              label: (item) => {
+                const idx = item.dataIndex;
+                return ' ' + names[idx];
+              }
+            }
+          }
+        },
         scales: {
-          x: { ticks: { color: '#aaa' }, grid: { color: '#2a2a2a' } },
+          x: { ticks: { color: '#aaa', maxRotation: 45 }, grid: { color: '#2a2a2a' } },
           y: {
             ticks: { color: '#aaa', stepSize: 1 },
             grid: { color: '#2a2a2a' },
-            title: { display: true, text: 'Sessions', color: '#888' },
+            title: { display: true, text: 'Classes', color: '#888' },
             beginAtZero: true
           }
         }
