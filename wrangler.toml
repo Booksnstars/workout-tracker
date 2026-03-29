@@ -1,0 +1,8 @@
+name = "workout-tracker"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "workout-tracker"
+database_id = "0f486c02-fa7d-4c21-b02d-c5578196a008"
