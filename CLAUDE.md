@@ -20,13 +20,12 @@ npx wrangler d1 execute workout-tracker --local --command="SELECT * FROM workout
 # Run a query against production DB
 npx wrangler d1 execute workout-tracker --remote --command="SELECT * FROM workouts"
 
-# Deploy to Cloudflare Pages
-npx wrangler pages deploy .
 ```
 
 ## Architecture
 
 Single-page app with no build step — `index.html` is both the build artifact and source. The backend is Cloudflare Pages Functions (filesystem-based routing under `functions/`).
+Deployment happens when pushed to main.
 
 **Frontend (`index.html`):** Vanilla JS, no framework. All state is fetched from the API on demand — there is no client-side store. Chart.js (CDN) renders the class attendance and exercise progression charts. The three tabs (Log, History, Stats) are CSS `display:none` toggled — all are in the DOM at all times.
 
