@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS saved_meals (
   protein REAL NOT NULL DEFAULT 0,
   carbs REAL NOT NULL DEFAULT 0,
   fat REAL NOT NULL DEFAULT 0,
+  items TEXT,
   created_at INTEGER NOT NULL,
   UNIQUE(user_id, name)
 );

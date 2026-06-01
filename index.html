@@ -525,6 +525,16 @@
     .activity-filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
     .activity-filter-bar select, .activity-filter-bar input { flex: 1; min-width: 120px; }
 
+    .meal-builder-row {
+      display: flex; gap: 6px; align-items: center; margin-bottom: 6px;
+      background: #1e1e1e; border: 1px solid #2a2a2a; border-radius: 8px; padding: 8px 10px;
+    }
+    .meal-builder-row .autocomplete-wrap { flex: 2; }
+    .meal-builder-row input[type="number"] { width: 60px; flex: 0 0 60px; text-align: center; }
+    .meal-builder-row .mbr-unit { font-size: 0.75rem; color: #888; flex: 0 0 50px; }
+    .meal-builder-row .mbr-kcal { font-size: 0.8rem; color: #f97316; font-weight: 600; flex: 0 0 55px; text-align: right; }
+    .meal-builder-row .remove-btn { background: none; border: none; color: #dc2626; font-size: 1.2rem; cursor: pointer; padding: 0 4px; }
+
     @media (max-width: 480px) {
       nav button { padding: 12px 6px; font-size: 0.82rem; }
 
@@ -856,10 +866,24 @@
 <!-- SAVED MEALS PAGE -->
 <div id="page-saved-meals" class="page">
   <h2>Saved Meals</h2>
-  <p style="font-size:0.85rem;color:#777;margin-bottom:16px;">Your go-to meals — quick-add from the Nutrition tab.</p>
+  <p style="font-size:0.85rem;color:#777;margin-bottom:16px;">Build meals with multiple items — quick-add from the Nutrition tab.</p>
   <div id="saved-meals-list"></div>
   <div id="saved-meals-empty" style="display:none;" class="empty-state">
-    <div class="icon">🍽️</div>No saved meals yet. Log a meal and tap "Log + Save".
+    <div class="icon">🍽️</div>No saved meals yet.
+  </div>
+
+  <hr class="section-divider" />
+  <h2>Create a new meal</h2>
+  <label>Meal name</label>
+  <input type="text" id="meal-builder-name" placeholder="e.g. My breakfast" />
+  <label style="margin-top:12px;">Items</label>
+  <div id="meal-builder-items"></div>
+  <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+    <button class="btn btn-secondary btn-small" onclick="addMealBuilderItem()">+ Add item</button>
+  </div>
+  <div id="meal-builder-totals" style="margin-top:12px;font-size:0.85rem;color:#888;"></div>
+  <div class="form-actions">
+    <button class="btn btn-primary" onclick="saveMealBuilder()">Save meal</button>
   </div>
 </div>
 
@@ -2221,7 +2245,7 @@
         body: JSON.stringify({ ...meal, id: Date.now(), date: offsetDate(nutritionDayOffset) })
       });
       renderNutritionPage();
-      showToast(meal.name + ' logged! 🍽️');
+      showToast(meal.name + ' logged!');
     } catch {
       showToast('Failed to save. Try again.', '#dc2626');
     }
@@ -2238,17 +2262,31 @@
       return;
     }
     empty.style.display = 'none';
-    list.innerHTML = saved.map(m => `
-      <div class="saved-meal-card">
-        <div class="saved-meal-info">
-          <div class="saved-meal-name">${escHtml(m.name)}</div>
-          <div class="saved-meal-macros">P ${m.protein || 0}g · C ${m.carbs || 0}g · F ${m.fat || 0}g</div>
+    list.innerHTML = saved.map(m => {
+      let itemsHtml = '';
+      if (m.items) {
+        try {
+          const items = JSON.parse(m.items);
+          itemsHtml = items.map(it =>
+            `<div style="font-size:0.75rem;color:#666;padding:2px 0;">${escHtml(it.food)} × ${it.qty} ${it.unit !== 'g' ? it.unit : 'g'}</div>`
+          ).join('');
+        } catch {}
+      }
+      return `
+      <div class="saved-meal-card" style="flex-direction:column;align-items:stretch;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="saved-meal-info">
+            <div class="saved-meal-name">${escHtml(m.name)}</div>
+            <div class="saved-meal-macros">P ${Math.round(m.protein || 0)}g · C ${Math.round(m.carbs || 0)}g · F ${Math.round(m.fat || 0)}g</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="saved-meal-kcal">${m.kcal} kcal</span>
+            <button class="btn btn-danger btn-small" onclick="deleteSavedMeal(${m.id})">Delete</button>
+          </div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span class="saved-meal-kcal">${m.kcal} kcal</span>
-          <button class="btn btn-danger btn-small" onclick="deleteSavedMeal(${m.id})">Delete</button>
-        </div>
-      </div>`).join('');
+        ${itemsHtml ? '<div style="margin-top:6px;border-top:1px solid #252525;padding-top:6px;">' + itemsHtml + '</div>' : ''}
+      </div>`;
+    }).join('');
   }
 
   async function deleteSavedMeal(id) {
@@ -2256,9 +2294,172 @@
     try {
       await api(`/api/saved_meals/${id}`, { method: 'DELETE' });
       renderSavedMealsPage();
+      populateQuickAdd();
       showToast('Removed.', '#dc2626');
     } catch {
       showToast('Failed to delete. Try again.', '#dc2626');
+    }
+  }
+
+  // --- Meal Builder ---
+  function addMealBuilderItem() {
+    const container = document.getElementById('meal-builder-items');
+    const row = document.createElement('div');
+    row.className = 'meal-builder-row';
+    row.innerHTML = `
+      <div class="autocomplete-wrap" style="flex:2;">
+        <input type="text" class="mbr-food-input" placeholder="Food..." autocomplete="off" style="width:100%;" />
+        <div class="autocomplete-dropdown"></div>
+      </div>
+      <input type="number" class="mbr-qty-input" placeholder="1" min="0.5" step="0.5" inputmode="decimal" />
+      <span class="mbr-unit"></span>
+      <span class="mbr-kcal">—</span>
+      <button class="remove-btn" onclick="this.closest('.meal-builder-row').remove(); updateMealBuilderTotals();" title="Remove">×</button>
+    `;
+    container.appendChild(row);
+    initMealBuilderAutocomplete(row);
+  }
+
+  function initMealBuilderAutocomplete(row) {
+    const input = row.querySelector('.mbr-food-input');
+    const dropdown = row.querySelector('.autocomplete-dropdown');
+    const qtyInput = row.querySelector('.mbr-qty-input');
+    let highlighted = -1;
+    let rowFood = null;
+
+    function getMatches(query) {
+      if (!query) return FOOD_DB.slice(0, 15);
+      const q = query.toLowerCase();
+      return FOOD_DB.filter(f =>
+        f.name.toLowerCase().includes(q) || (f.alt && f.alt.toLowerCase().includes(q))
+      ).slice(0, 15);
+    }
+
+    function renderDd(query) {
+      const matches = getMatches(query);
+      highlighted = -1;
+      if (!matches.length) { closeDd(); return; }
+      dropdown.innerHTML = matches.map(f =>
+        `<div class="autocomplete-item" data-name="${escHtml(f.name)}">${escHtml(f.alt || f.name)} <span style="color:#888;font-size:0.75rem;">${f.kcal} kcal/${f.unit}</span></div>`
+      ).join('');
+      dropdown.classList.add('open');
+      dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+        item.addEventListener('click', () => { pick(item.dataset.name); closeDd(); });
+      });
+    }
+
+    function closeDd() { dropdown.classList.remove('open'); dropdown.innerHTML = ''; highlighted = -1; }
+
+    function pick(name) {
+      rowFood = FOOD_DB.find(f => f.name === name);
+      input.value = rowFood.alt || rowFood.name;
+      row.querySelector('.mbr-unit').textContent = rowFood.unit === 'g' ? 'g' : rowFood.unit;
+      if (!qtyInput.value) qtyInput.value = rowFood.unit === 'g' ? '100' : '1';
+      qtyInput.step = rowFood.unit === 'g' ? '10' : '0.5';
+      updateRowKcal();
+      qtyInput.focus();
+    }
+
+    function autoMatch() {
+      if (rowFood) return;
+      const typed = input.value.trim().toLowerCase();
+      if (!typed) return;
+      rowFood = FOOD_DB.find(f => f.name.toLowerCase() === typed || (f.alt && f.alt.toLowerCase() === typed))
+        || FOOD_DB.find(f => f.name.toLowerCase().startsWith(typed) || (f.alt && f.alt.toLowerCase().startsWith(typed)));
+      if (rowFood) {
+        input.value = rowFood.alt || rowFood.name;
+        row.querySelector('.mbr-unit').textContent = rowFood.unit === 'g' ? 'g' : rowFood.unit;
+      }
+    }
+
+    function updateRowKcal() {
+      autoMatch();
+      const qty = parseFloat(qtyInput.value) || 0;
+      if (!rowFood || !qty) { row.querySelector('.mbr-kcal').textContent = '—'; updateMealBuilderTotals(); return; }
+      const factor = rowFood.unit === 'g' ? qty / rowFood.serving : qty;
+      const kcal = Math.round(rowFood.kcal * factor);
+      row.querySelector('.mbr-kcal').textContent = kcal + ' kcal';
+      row._food = rowFood;
+      row._qty = qty;
+      updateMealBuilderTotals();
+    }
+
+    input.addEventListener('input', () => { rowFood = null; renderDd(input.value.trim()); });
+    input.addEventListener('focus', () => renderDd(input.value.trim()));
+    input.addEventListener('blur', () => setTimeout(closeDd, 250));
+    qtyInput.addEventListener('input', updateRowKcal);
+    qtyInput.addEventListener('focus', updateRowKcal);
+
+    input.addEventListener('keydown', e => {
+      const items = [...dropdown.querySelectorAll('.autocomplete-item')];
+      if (!items.length) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); highlighted = Math.min(highlighted + 1, items.length - 1); items.forEach((el, i) => el.classList.toggle('highlighted', i === highlighted)); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); highlighted = Math.max(highlighted - 1, 0); items.forEach((el, i) => el.classList.toggle('highlighted', i === highlighted)); }
+      else if (e.key === 'Enter' && highlighted >= 0) { e.preventDefault(); pick(items[highlighted].dataset.name); closeDd(); }
+      else if (e.key === 'Escape') closeDd();
+    });
+  }
+
+  function updateMealBuilderTotals() {
+    const rows = document.querySelectorAll('#meal-builder-items .meal-builder-row');
+    let totKcal = 0, totP = 0, totC = 0, totF = 0;
+    rows.forEach(row => {
+      const food = row._food;
+      const qty = row._qty || 0;
+      if (!food || !qty) return;
+      const factor = food.unit === 'g' ? qty / food.serving : qty;
+      totKcal += Math.round(food.kcal * factor);
+      totP += food.protein * factor;
+      totC += food.carbs * factor;
+      totF += food.fat * factor;
+    });
+    const el = document.getElementById('meal-builder-totals');
+    if (totKcal > 0) {
+      el.innerHTML = `<strong style="color:#f97316;">${totKcal} kcal</strong> · P ${Math.round(totP)}g · C ${Math.round(totC)}g · F ${Math.round(totF)}g`;
+    } else {
+      el.innerHTML = '';
+    }
+  }
+
+  async function saveMealBuilder() {
+    const name = document.getElementById('meal-builder-name').value.trim();
+    if (!name) { showToast('Enter a meal name.', '#dc2626'); return; }
+    const rows = document.querySelectorAll('#meal-builder-items .meal-builder-row');
+    const items = [];
+    let totKcal = 0, totP = 0, totC = 0, totF = 0;
+    rows.forEach(row => {
+      const food = row._food;
+      const qty = row._qty || 0;
+      if (!food || !qty) return;
+      const factor = food.unit === 'g' ? qty / food.serving : qty;
+      items.push({ food: food.alt || food.name, qty, unit: food.unit, serving: food.serving });
+      totKcal += Math.round(food.kcal * factor);
+      totP += food.protein * factor;
+      totC += food.carbs * factor;
+      totF += food.fat * factor;
+    });
+    if (!items.length) { showToast('Add at least one item.', '#dc2626'); return; }
+    try {
+      await api('/api/saved_meals', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: Date.now(), name,
+          meal_type: 'other',
+          kcal: totKcal,
+          protein: Math.round(totP * 10) / 10,
+          carbs: Math.round(totC * 10) / 10,
+          fat: Math.round(totF * 10) / 10,
+          items: JSON.stringify(items)
+        })
+      });
+      document.getElementById('meal-builder-name').value = '';
+      document.getElementById('meal-builder-items').innerHTML = '';
+      document.getElementById('meal-builder-totals').innerHTML = '';
+      renderSavedMealsPage();
+      populateQuickAdd();
+      showToast('Meal saved!');
+    } catch {
+      showToast('Failed to save. Try again.', '#dc2626');
     }
   }
 
