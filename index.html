@@ -526,7 +526,7 @@
     .activity-filter-bar select, .activity-filter-bar input { flex: 1; min-width: 120px; }
 
     @media (max-width: 480px) {
-      nav button { padding: 12px 4px; font-size: 0.78rem; }
+      nav button { padding: 12px 6px; font-size: 0.82rem; }
 
       /* Exercise row: name full-width on top, numbers below */
       .exercise-header { display: none; }
@@ -621,7 +621,6 @@
   <button onclick="showPage('history')">History</button>
   <button onclick="showPage('stats')">Stats</button>
   <button onclick="showPage('calendar')">Calendar</button>
-  <button onclick="showPage('activity')">Activity</button>
   <button onclick="showPage('nutrition')">Nutrition</button>
   <button onclick="showPage('saved-meals')">Meals</button>
 </nav>
@@ -683,12 +682,16 @@
 
 <!-- HISTORY PAGE -->
 <div id="page-history" class="page">
-  <h2>Workout History</h2>
-  <div class="filter-bar">
-    <input type="text" id="search-input" placeholder="Search exercise..." oninput="renderHistory()" />
+  <h2>History</h2>
+  <div class="stats-grid" id="history-stats-grid" style="margin-bottom:16px;"></div>
+  <div class="activity-filter-bar">
+    <input type="text" id="search-input" placeholder="Search..." oninput="renderHistory()" />
+    <select id="history-type-filter" onchange="renderHistory()">
+      <option value="">All types</option>
+    </select>
     <select id="sort-select" onchange="renderHistory()">
-      <option value="newest">Newest first</option>
-      <option value="oldest">Oldest first</option>
+      <option value="newest">Newest</option>
+      <option value="oldest">Oldest</option>
     </select>
   </div>
   <div id="history-list"></div>
@@ -840,22 +843,6 @@
   </div>
 </div>
 
-<!-- ACTIVITY PAGE -->
-<div id="page-activity" class="page">
-  <h2>Activity History</h2>
-  <div class="stats-grid" id="activity-stats-grid" style="margin-bottom:16px;"></div>
-  <div class="activity-filter-bar">
-    <select id="activity-type-filter" onchange="renderActivityPage()">
-      <option value="">All types</option>
-    </select>
-    <input type="month" id="activity-month-filter" onchange="renderActivityPage()" />
-  </div>
-  <div id="activity-list"></div>
-  <div id="activity-empty" class="empty-state" style="display:none;">
-    <div class="icon">🏃</div>No activities found.
-  </div>
-</div>
-
 <!-- SAVED MEALS PAGE -->
 <div id="page-saved-meals" class="page">
   <h2>Saved Meals</h2>
@@ -965,7 +952,6 @@
     if (name === 'history') renderHistory();
     if (name === 'stats') renderStats();
     if (name === 'calendar') renderCalendar();
-    if (name === 'activity') renderActivityPage();
     if (name === 'nutrition') renderNutritionPage();
     if (name === 'saved-meals') renderSavedMealsPage();
   }
@@ -1040,17 +1026,70 @@
     const [workouts, classes, activities] = await Promise.all([loadWorkouts(), loadClasses(), loadActivities()]);
     const search = document.getElementById('search-input').value.toLowerCase();
     const sort = document.getElementById('sort-select').value;
+    const typeFilter = document.getElementById('history-type-filter').value;
     const container = document.getElementById('history-list');
 
-    const filteredWorkouts = workouts.filter(w =>
-      !search || w.exercises.some(e => e.name.toLowerCase().includes(search))
-    );
-    const filteredClasses = classes.filter(c =>
-      !search || c.class_name.toLowerCase().includes(search)
-    );
-    const filteredActivities = activities.filter(a =>
-      !search || a.activity_name.toLowerCase().includes(search)
-    );
+    // Populate type filter dropdown
+    const allTypes = [
+      ...new Set([
+        'Gym Workout',
+        ...classes.map(c => c.class_name),
+        ...activities.map(a => a.activity_name)
+      ])
+    ].sort();
+    const typeSelect = document.getElementById('history-type-filter');
+    const currentType = typeSelect.value;
+    typeSelect.innerHTML = '<option value="">All types</option>' +
+      allTypes.map(t => `<option value="${escHtml(t)}" ${t === currentType ? 'selected' : ''}>${escHtml(t)}</option>`).join('');
+
+    // Apply type filter
+    let filteredWorkouts = workouts;
+    let filteredClasses = classes;
+    let filteredActivities = activities;
+
+    if (typeFilter === 'Gym Workout') {
+      filteredClasses = [];
+      filteredActivities = [];
+    } else if (typeFilter && ['Swimming', 'Pilates'].includes(typeFilter)) {
+      filteredWorkouts = [];
+      filteredActivities = [];
+      filteredClasses = classes.filter(c => c.class_name === typeFilter);
+    } else if (typeFilter) {
+      filteredWorkouts = [];
+      filteredClasses = [];
+      filteredActivities = activities.filter(a => a.activity_name === typeFilter);
+    }
+
+    // Apply search filter
+    if (search) {
+      filteredWorkouts = filteredWorkouts.filter(w =>
+        w.exercises.some(e => e.name.toLowerCase().includes(search))
+      );
+      filteredClasses = filteredClasses.filter(c =>
+        c.class_name.toLowerCase().includes(search)
+      );
+      filteredActivities = filteredActivities.filter(a =>
+        a.activity_name.toLowerCase().includes(search)
+      );
+    }
+
+    // Stats (based on all data, not filtered)
+    const totalAll = workouts.length + classes.length + activities.length;
+    const totalCalories = activities.reduce((s, a) => s + (a.calories || 0), 0)
+      + classes.reduce((s, c) => s + (c.calories || 0), 0)
+      + workouts.reduce((s, w) => s + (w.calories || 0), 0);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 30);
+    const recent30 = [
+      ...workouts.filter(w => new Date(w.date) >= cutoff),
+      ...classes.filter(c => new Date(c.date) >= cutoff),
+      ...activities.filter(a => new Date(a.date) >= cutoff)
+    ].length;
+
+    document.getElementById('history-stats-grid').innerHTML = `
+      <div class="stat-card"><div class="stat-value" style="color:#22c55e;">${totalAll}</div><div class="stat-label">Total Entries</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:#22c55e;">${recent30}</div><div class="stat-label">Last 30 Days</div></div>
+    `;
 
     const items = [
       ...filteredWorkouts.map(w => ({ type: 'workout', date: w.date, data: w })),
@@ -1769,77 +1808,6 @@
   // --- Activities ---
   async function loadActivities() {
     return api('/api/activities');
-  }
-
-  async function renderActivityPage() {
-    const activities = await loadActivities();
-    const filter = document.getElementById('activity-type-filter');
-    const monthFilter = document.getElementById('activity-month-filter');
-
-    // Populate type filter
-    const types = [...new Set(activities.map(a => a.activity_name))].sort();
-    const currentType = filter.value;
-    filter.innerHTML = '<option value="">All types</option>' +
-      types.map(t => `<option value="${escHtml(t)}" ${t === currentType ? 'selected' : ''}>${escHtml(t)}</option>`).join('');
-
-    // Filter
-    let filtered = activities;
-    if (currentType) filtered = filtered.filter(a => a.activity_name === currentType);
-    const monthVal = monthFilter.value;
-    if (monthVal) filtered = filtered.filter(a => a.date.startsWith(monthVal));
-
-    // Stats
-    const totalActivities = filtered.length;
-    const totalCalories = filtered.reduce((s, a) => s + (a.calories || 0), 0);
-    const totalMinutes = filtered.reduce((s, a) => s + (a.duration || 0), 0);
-    const avgHr = filtered.filter(a => a.avg_hr).length
-      ? Math.round(filtered.reduce((s, a) => s + (a.avg_hr || 0), 0) / filtered.filter(a => a.avg_hr).length)
-      : '—';
-
-    document.getElementById('activity-stats-grid').innerHTML = `
-      <div class="stat-card"><div class="stat-value" style="color:#22c55e;">${totalActivities}</div><div class="stat-label">Activities</div></div>
-      <div class="stat-card"><div class="stat-value" style="color:#22c55e;">${Math.round(totalCalories / 1000 * 10) / 10}k</div><div class="stat-label">Calories</div></div>
-      <div class="stat-card"><div class="stat-value" style="color:#22c55e;">${Math.round(totalMinutes / 60)}</div><div class="stat-label">Hours</div></div>
-      <div class="stat-card"><div class="stat-value" style="color:#22c55e;">${avgHr}</div><div class="stat-label">Avg HR</div></div>
-    `;
-
-    // List
-    const listEl = document.getElementById('activity-list');
-    const emptyEl = document.getElementById('activity-empty');
-    if (!filtered.length) {
-      listEl.innerHTML = '';
-      emptyEl.style.display = 'block';
-      return;
-    }
-    emptyEl.style.display = 'none';
-    listEl.innerHTML = filtered.map(a => {
-      const meta = [
-        a.duration ? a.duration + ' min' : null,
-        a.calories ? a.calories + ' cal' : null,
-        a.avg_hr ? a.avg_hr + ' bpm' : null,
-        a.distance ? a.distance.toFixed(1) + ' km' : null,
-        a.steps ? a.steps.toLocaleString() + ' steps' : null
-      ].filter(Boolean);
-      return `
-        <div class="activity-card">
-          <div class="activity-card-header">
-            <span class="activity-card-name">${escHtml(a.activity_name)}</span>
-            <span class="activity-card-date">${formatDate(a.date)}</span>
-          </div>
-          <div class="activity-card-meta">${meta.map(m => '<span>' + m + '</span>').join('')}</div>
-        </div>`;
-    }).join('');
-  }
-
-  async function deleteActivity(id) {
-    if (!confirm('Delete this activity?')) return;
-    try {
-      await api('/api/activities/' + id, { method: 'DELETE' });
-      renderActivityPage();
-      showToast('Deleted.', '#dc2626');
-    } catch {
-      showToast('Failed to delete.', '#dc2626');
-    }
   }
 
   // --- Nutrition ---
