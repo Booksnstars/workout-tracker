@@ -824,7 +824,7 @@
     <div class="autocomplete-dropdown" id="food-dropdown"></div>
   </div>
   <label>Quantity <span id="nutr-unit-label" style="color:#f97316;"></span></label>
-  <input type="number" id="nutr-qty" placeholder="e.g. 1" min="0.5" step="0.5" inputmode="decimal" oninput="calcFoodNutrition()" />
+  <input type="number" id="nutr-qty" placeholder="e.g. 1" min="0.5" step="0.5" inputmode="decimal" oninput="calcFoodNutrition()" onfocus="calcFoodNutrition()" />
   <div class="macro-grid" style="margin-top:12px;">
     <div>
       <label style="margin-top:0;color:#f97316;">Calories</label>
@@ -2018,6 +2018,27 @@
 
   function calcFoodNutrition() {
     const qty = parseFloat(document.getElementById('nutr-qty').value) || 0;
+    // Auto-match if user typed a name without clicking dropdown
+    if (!selectedFood) {
+      const typed = document.getElementById('nutr-food-search').value.trim().toLowerCase();
+      if (typed) {
+        // Try exact match first, then starts-with
+        selectedFood = FOOD_DB.find(f =>
+          f.name.toLowerCase() === typed ||
+          (f.alt && f.alt.toLowerCase() === typed)
+        ) || FOOD_DB.find(f =>
+          f.name.toLowerCase().startsWith(typed) ||
+          (f.alt && f.alt.toLowerCase().startsWith(typed))
+        );
+        if (selectedFood) {
+          document.getElementById('nutr-food-search').value = selectedFood.alt || selectedFood.name;
+          const unitLabel = selectedFood.unit === 'g' ? '(grams)' : `(${selectedFood.unit})`;
+          document.getElementById('nutr-unit-label').textContent = unitLabel;
+          document.getElementById('nutr-qty').placeholder = selectedFood.unit === 'g' ? 'e.g. 150' : 'e.g. 1';
+          document.getElementById('nutr-qty').step = selectedFood.unit === 'g' ? '10' : '0.5';
+        }
+      }
+    }
     if (!selectedFood || !qty) {
       clearNutritionFields();
       return;
