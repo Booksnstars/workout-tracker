@@ -37,6 +37,26 @@ ALTER TABLE classes ADD COLUMN user_id INTEGER REFERENCES users(id);
 -- Run once to add duration to classes (will error if already applied, that's fine)
 ALTER TABLE classes ADD COLUMN duration INTEGER;
 
+-- Run once to add fitness metrics columns (will error if already applied, that's fine)
+ALTER TABLE workouts ADD COLUMN calories INTEGER;
+ALTER TABLE workouts ADD COLUMN avg_hr INTEGER;
+ALTER TABLE classes ADD COLUMN calories INTEGER;
+ALTER TABLE classes ADD COLUMN avg_hr INTEGER;
+
+CREATE TABLE IF NOT EXISTS activities (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  date TEXT NOT NULL,
+  activity_name TEXT NOT NULL,
+  duration INTEGER,
+  calories INTEGER,
+  avg_hr INTEGER,
+  distance REAL,
+  steps INTEGER,
+  source TEXT,
+  created_at INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS nutrition (
   id INTEGER PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id),
