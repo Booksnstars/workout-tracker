@@ -36,3 +36,29 @@ ALTER TABLE classes ADD COLUMN user_id INTEGER REFERENCES users(id);
 
 -- Run once to add duration to classes (will error if already applied, that's fine)
 ALTER TABLE classes ADD COLUMN duration INTEGER;
+
+CREATE TABLE IF NOT EXISTS nutrition (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  date TEXT NOT NULL,
+  meal_type TEXT NOT NULL DEFAULT 'other',
+  name TEXT NOT NULL,
+  kcal INTEGER NOT NULL DEFAULT 0,
+  protein REAL NOT NULL DEFAULT 0,
+  carbs REAL NOT NULL DEFAULT 0,
+  fat REAL NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS saved_meals (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  name TEXT NOT NULL,
+  meal_type TEXT NOT NULL DEFAULT 'other',
+  kcal INTEGER NOT NULL DEFAULT 0,
+  protein REAL NOT NULL DEFAULT 0,
+  carbs REAL NOT NULL DEFAULT 0,
+  fat REAL NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  UNIQUE(user_id, name)
+);

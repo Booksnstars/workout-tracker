@@ -443,6 +443,72 @@
       .cal-dot { width: 8px; height: 8px; }
     }
 
+    /* Nutrition */
+    .date-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px;
+      padding: 10px 16px; margin-bottom: 16px;
+    }
+    .date-nav button {
+      background: none; border: none; color: #f97316;
+      font-size: 1.3rem; cursor: pointer; padding: 0 6px;
+    }
+    .date-nav-label { font-weight: 600; color: #ddd; font-size: 0.95rem; }
+    .date-nav-sub { font-size: 0.75rem; color: #777; text-align: center; }
+
+    .nutrition-dashboard {
+      background: #1a1a1a; border: 1px solid #2a2a2a;
+      border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center;
+    }
+    .ring-container { position: relative; width: 140px; height: 140px; margin: 0 auto 16px; }
+    .ring-svg { transform: rotate(-90deg); }
+    .ring-bg { fill: none; stroke: #2a2a2a; stroke-width: 12; }
+    .ring-fill { fill: none; stroke: #f97316; stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+    .ring-fill.over { stroke: #dc2626; }
+    .ring-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+    .ring-kcal { font-size: 1.5rem; font-weight: 700; color: #f0f0f0; line-height: 1; }
+    .ring-label { font-size: 0.7rem; color: #888; margin-top: 2px; }
+    .ring-remaining { font-size: 0.7rem; color: #666; margin-top: 2px; }
+
+    .macro-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 4px; }
+    .macro-item { text-align: center; }
+    .macro-value { font-size: 1.1rem; font-weight: 700; }
+    .macro-value.protein { color: #60a5fa; }
+    .macro-value.carbs { color: #facc15; }
+    .macro-value.fat { color: #a78bfa; }
+    .macro-label { font-size: 0.7rem; color: #777; margin-top: 2px; }
+    .macro-bar-wrap { height: 4px; background: #2a2a2a; border-radius: 2px; margin-top: 6px; }
+    .macro-bar { height: 4px; border-radius: 2px; transition: width 0.5s; }
+    .macro-bar.protein { background: #60a5fa; }
+    .macro-bar.carbs { background: #facc15; }
+    .macro-bar.fat { background: #a78bfa; }
+
+    .meal-log-card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .meal-log-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid #252525; font-size: 0.88rem;
+    }
+    .meal-log-item:last-child { border-bottom: none; }
+    .meal-log-name { color: #ddd; flex: 1; }
+    .meal-log-macros { font-size: 0.75rem; color: #666; }
+    .meal-log-kcal { color: #f97316; font-weight: 700; margin-right: 8px; white-space: nowrap; }
+    .meal-type-tag {
+      display: inline-block; font-size: 0.68rem; padding: 1px 6px;
+      border-radius: 10px; background: #2a2a2a; color: #aaa; margin-left: 5px;
+    }
+
+    .macro-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+    .saved-meal-card {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px;
+      padding: 14px; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .saved-meal-info { flex: 1; }
+    .saved-meal-name { font-weight: 600; color: #ddd; font-size: 0.95rem; }
+    .saved-meal-macros { font-size: 0.78rem; color: #777; margin-top: 3px; }
+    .saved-meal-kcal { font-size: 1.1rem; font-weight: 700; color: #f97316; margin-right: 6px; }
+
     @media (max-width: 480px) {
       nav button { padding: 14px 8px; font-size: 0.95rem; }
 
@@ -539,6 +605,8 @@
   <button onclick="showPage('history')">History</button>
   <button onclick="showPage('stats')">Stats</button>
   <button onclick="showPage('calendar')">Calendar</button>
+  <button onclick="showPage('nutrition')">Nutrition</button>
+  <button onclick="showPage('saved-meals')">Meals</button>
 </nav>
 
 <!-- LOG PAGE -->
@@ -661,6 +729,109 @@
   <div class="calendar-grid" id="calendar-grid"></div>
 </div>
 
+<!-- NUTRITION PAGE -->
+<div id="page-nutrition" class="page">
+  <div class="date-nav">
+    <button onclick="changeNutritionDay(-1)">&#8592;</button>
+    <div>
+      <div class="date-nav-label" id="nutrition-date-label"></div>
+      <div class="date-nav-sub" id="nutrition-date-sub"></div>
+    </div>
+    <button onclick="changeNutritionDay(1)">&#8594;</button>
+  </div>
+
+  <div class="nutrition-dashboard">
+    <div class="ring-container">
+      <svg class="ring-svg" width="140" height="140" viewBox="0 0 140 140">
+        <circle class="ring-bg" cx="70" cy="70" r="58"/>
+        <circle class="ring-fill" id="calorie-ring" cx="70" cy="70" r="58"
+          stroke-dasharray="364.4" stroke-dashoffset="364.4"/>
+      </svg>
+      <div class="ring-text">
+        <div class="ring-kcal" id="ring-kcal-consumed">0</div>
+        <div class="ring-label">kcal</div>
+        <div class="ring-remaining" id="ring-kcal-remaining"></div>
+      </div>
+    </div>
+    <div class="macro-row">
+      <div class="macro-item">
+        <div class="macro-value protein" id="dash-protein">0g</div>
+        <div class="macro-label">Protein</div>
+        <div class="macro-bar-wrap"><div class="macro-bar protein" id="bar-protein" style="width:0%"></div></div>
+      </div>
+      <div class="macro-item">
+        <div class="macro-value carbs" id="dash-carbs">0g</div>
+        <div class="macro-label">Carbs</div>
+        <div class="macro-bar-wrap"><div class="macro-bar carbs" id="bar-carbs" style="width:0%"></div></div>
+      </div>
+      <div class="macro-item">
+        <div class="macro-value fat" id="dash-fat">0g</div>
+        <div class="macro-label">Fat</div>
+        <div class="macro-bar-wrap"><div class="macro-bar fat" id="bar-fat" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="meal-log-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h2 style="margin:0;">Meals logged</h2>
+    </div>
+    <div id="meal-log-list"><div style="color:#555;font-size:0.85rem;">No meals logged yet.</div></div>
+  </div>
+
+  <hr class="section-divider" />
+  <h2>Quick-add from saved meals</h2>
+  <div style="display:flex;gap:8px;margin-bottom:8px;">
+    <select id="quick-add-select" style="flex:1;"><option value="">— choose a saved meal —</option></select>
+    <button class="btn btn-primary" onclick="quickAddMeal()" style="white-space:nowrap;">Add</button>
+  </div>
+
+  <hr class="section-divider" />
+  <h2>Add meal manually</h2>
+  <label>Meal name</label>
+  <input type="text" id="nutr-name" placeholder="e.g. Arroz de frango" />
+  <label>Meal type</label>
+  <select id="nutr-type">
+    <option value="breakfast">Breakfast</option>
+    <option value="snack-am">Snack AM</option>
+    <option value="lunch">Lunch</option>
+    <option value="snack-pm">Snack PM</option>
+    <option value="dinner" selected>Dinner</option>
+    <option value="other">Other</option>
+  </select>
+  <label>Calories (kcal)</label>
+  <input type="number" id="nutr-kcal" placeholder="e.g. 450" min="0" inputmode="numeric" />
+  <label>Macros (optional)</label>
+  <div class="macro-grid">
+    <div>
+      <label style="margin-top:0;color:#60a5fa;">Protein (g)</label>
+      <input type="number" id="nutr-protein" placeholder="0" min="0" inputmode="decimal" />
+    </div>
+    <div>
+      <label style="margin-top:0;color:#facc15;">Carbs (g)</label>
+      <input type="number" id="nutr-carbs" placeholder="0" min="0" inputmode="decimal" />
+    </div>
+    <div>
+      <label style="margin-top:0;color:#a78bfa;">Fat (g)</label>
+      <input type="number" id="nutr-fat" placeholder="0" min="0" inputmode="decimal" />
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" onclick="logMeal()">Log meal</button>
+    <button class="btn btn-secondary" onclick="logAndSaveMeal()">Log + Save</button>
+  </div>
+</div>
+
+<!-- SAVED MEALS PAGE -->
+<div id="page-saved-meals" class="page">
+  <h2>Saved Meals</h2>
+  <p style="font-size:0.85rem;color:#777;margin-bottom:16px;">Your go-to meals — quick-add from the Nutrition tab.</p>
+  <div id="saved-meals-list"></div>
+  <div id="saved-meals-empty" style="display:none;" class="empty-state">
+    <div class="icon">🍽️</div>No saved meals yet. Log a meal and tap "Log + Save".
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -760,6 +931,8 @@
     if (name === 'history') renderHistory();
     if (name === 'stats') renderStats();
     if (name === 'calendar') renderCalendar();
+    if (name === 'nutrition') renderNutritionPage();
+    if (name === 'saved-meals') renderSavedMealsPage();
   }
 
   // --- Log Page ---
@@ -1531,6 +1704,205 @@
     }
 
     grid.innerHTML = html;
+  }
+
+  // --- Nutrition ---
+  const GOAL_KCAL = 1600, GOAL_PROTEIN = 110, GOAL_CARBS = 160, GOAL_FAT = 55;
+  let nutritionDayOffset = 0;
+
+  function offsetDate(offset) {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return d.toISOString().split('T')[0];
+  }
+
+  function changeNutritionDay(delta) {
+    nutritionDayOffset = Math.min(0, nutritionDayOffset + delta);
+    renderNutritionPage();
+  }
+
+  async function loadNutrition(dateStr) {
+    const all = await api('/api/nutrition');
+    return all.filter(m => m.date === dateStr);
+  }
+
+  async function renderNutritionPage() {
+    const dateStr = offsetDate(nutritionDayOffset);
+    const label = document.getElementById('nutrition-date-label');
+    const sub = document.getElementById('nutrition-date-sub');
+    if (nutritionDayOffset === 0) label.textContent = 'Today';
+    else if (nutritionDayOffset === -1) label.textContent = 'Yesterday';
+    else label.textContent = formatDate(dateStr);
+    sub.textContent = dateStr;
+
+    const meals = await loadNutrition(dateStr);
+
+    const totKcal   = meals.reduce((s, m) => s + (m.kcal || 0), 0);
+    const totProt   = meals.reduce((s, m) => s + (m.protein || 0), 0);
+    const totCarbs  = meals.reduce((s, m) => s + (m.carbs || 0), 0);
+    const totFat    = meals.reduce((s, m) => s + (m.fat || 0), 0);
+    const remaining = GOAL_KCAL - totKcal;
+
+    const circ = 364.4;
+    const pct = Math.min(totKcal / GOAL_KCAL, 1);
+    const ring = document.getElementById('calorie-ring');
+    ring.style.strokeDashoffset = circ - pct * circ;
+    ring.className = 'ring-fill' + (totKcal > GOAL_KCAL ? ' over' : '');
+
+    document.getElementById('ring-kcal-consumed').textContent = totKcal;
+    document.getElementById('ring-kcal-remaining').textContent =
+      remaining >= 0 ? remaining + ' left' : Math.abs(remaining) + ' over';
+
+    document.getElementById('dash-protein').textContent = Math.round(totProt) + 'g';
+    document.getElementById('dash-carbs').textContent   = Math.round(totCarbs) + 'g';
+    document.getElementById('dash-fat').textContent     = Math.round(totFat) + 'g';
+    document.getElementById('bar-protein').style.width  = Math.min(totProt  / GOAL_PROTEIN * 100, 100) + '%';
+    document.getElementById('bar-carbs').style.width    = Math.min(totCarbs / GOAL_CARBS   * 100, 100) + '%';
+    document.getElementById('bar-fat').style.width      = Math.min(totFat   / GOAL_FAT     * 100, 100) + '%';
+
+    const typeLabel = {
+      breakfast: 'Breakfast', 'snack-am': 'Snack AM', lunch: 'Lunch',
+      'snack-pm': 'Snack PM', dinner: 'Dinner', other: 'Other'
+    };
+    const listEl = document.getElementById('meal-log-list');
+    if (!meals.length) {
+      listEl.innerHTML = '<div style="color:#555;font-size:0.85rem;">No meals logged yet.</div>';
+    } else {
+      listEl.innerHTML = meals.map(m => `
+        <div class="meal-log-item">
+          <div style="flex:1;">
+            <div class="meal-log-name">${escHtml(m.name)}<span class="meal-type-tag">${typeLabel[m.meal_type] || m.meal_type}</span></div>
+            <div class="meal-log-macros">P ${m.protein || 0}g · C ${m.carbs || 0}g · F ${m.fat || 0}g</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="meal-log-kcal">${m.kcal} kcal</span>
+            <button class="btn btn-danger btn-small" onclick="deleteMeal(${m.id})">✕</button>
+          </div>
+        </div>`).join('');
+    }
+
+    populateQuickAdd();
+  }
+
+  async function deleteMeal(id) {
+    if (!confirm('Delete this meal?')) return;
+    try {
+      await api(`/api/nutrition/${id}`, { method: 'DELETE' });
+      renderNutritionPage();
+      showToast('Deleted.', '#dc2626');
+    } catch {
+      showToast('Failed to delete. Try again.', '#dc2626');
+    }
+  }
+
+  function getMealFormData() {
+    return {
+      id: Date.now(),
+      name:    document.getElementById('nutr-name').value.trim(),
+      meal_type: document.getElementById('nutr-type').value,
+      kcal:    parseInt(document.getElementById('nutr-kcal').value) || 0,
+      protein: parseFloat(document.getElementById('nutr-protein').value) || 0,
+      carbs:   parseFloat(document.getElementById('nutr-carbs').value) || 0,
+      fat:     parseFloat(document.getElementById('nutr-fat').value) || 0,
+    };
+  }
+
+  function clearMealForm() {
+    ['nutr-name','nutr-kcal','nutr-protein','nutr-carbs','nutr-fat'].forEach(id => document.getElementById(id).value = '');
+  }
+
+  async function logMeal() {
+    const d = getMealFormData();
+    if (!d.name) { showToast('Enter a meal name.', '#dc2626'); return; }
+    if (!d.kcal) { showToast('Enter calories.', '#dc2626'); return; }
+    try {
+      await api('/api/nutrition', {
+        method: 'POST',
+        body: JSON.stringify({ ...d, date: offsetDate(nutritionDayOffset) })
+      });
+      clearMealForm();
+      renderNutritionPage();
+      showToast('Meal logged! 🍽️');
+    } catch {
+      showToast('Failed to save. Try again.', '#dc2626');
+    }
+  }
+
+  async function logAndSaveMeal() {
+    const d = getMealFormData();
+    if (!d.name) { showToast('Enter a meal name.', '#dc2626'); return; }
+    if (!d.kcal) { showToast('Enter calories.', '#dc2626'); return; }
+    try {
+      await Promise.all([
+        api('/api/nutrition', { method: 'POST', body: JSON.stringify({ ...d, date: offsetDate(nutritionDayOffset) }) }),
+        api('/api/saved_meals', { method: 'POST', body: JSON.stringify(d) })
+      ]);
+      clearMealForm();
+      renderNutritionPage();
+      showToast('Logged & saved! ⭐');
+    } catch {
+      showToast('Failed to save. Try again.', '#dc2626');
+    }
+  }
+
+  async function populateQuickAdd() {
+    const saved = await api('/api/saved_meals');
+    const sel = document.getElementById('quick-add-select');
+    sel.innerHTML = '<option value="">— choose a saved meal —</option>' +
+      saved.map(m => `<option value="${m.id}">${escHtml(m.name)} (${m.kcal} kcal)</option>`).join('');
+  }
+
+  async function quickAddMeal() {
+    const id = document.getElementById('quick-add-select').value;
+    if (!id) { showToast('Select a meal first.', '#dc2626'); return; }
+    const saved = await api('/api/saved_meals');
+    const meal = saved.find(m => String(m.id) === id);
+    if (!meal) return;
+    try {
+      await api('/api/nutrition', {
+        method: 'POST',
+        body: JSON.stringify({ ...meal, id: Date.now(), date: offsetDate(nutritionDayOffset) })
+      });
+      renderNutritionPage();
+      showToast(meal.name + ' logged! 🍽️');
+    } catch {
+      showToast('Failed to save. Try again.', '#dc2626');
+    }
+  }
+
+  // --- Saved Meals Page ---
+  async function renderSavedMealsPage() {
+    const saved = await api('/api/saved_meals');
+    const list  = document.getElementById('saved-meals-list');
+    const empty = document.getElementById('saved-meals-empty');
+    if (!saved.length) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    list.innerHTML = saved.map(m => `
+      <div class="saved-meal-card">
+        <div class="saved-meal-info">
+          <div class="saved-meal-name">${escHtml(m.name)}</div>
+          <div class="saved-meal-macros">P ${m.protein || 0}g · C ${m.carbs || 0}g · F ${m.fat || 0}g</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="saved-meal-kcal">${m.kcal} kcal</span>
+          <button class="btn btn-danger btn-small" onclick="deleteSavedMeal(${m.id})">Delete</button>
+        </div>
+      </div>`).join('');
+  }
+
+  async function deleteSavedMeal(id) {
+    if (!confirm('Remove this saved meal?')) return;
+    try {
+      await api(`/api/saved_meals/${id}`, { method: 'DELETE' });
+      renderSavedMealsPage();
+      showToast('Removed.', '#dc2626');
+    } catch {
+      showToast('Failed to delete. Try again.', '#dc2626');
+    }
   }
 
   // --- Init ---
