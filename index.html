@@ -836,7 +836,7 @@
   <label>Quantity</label>
   <div style="display:flex;align-items:center;gap:8px;">
     <input type="number" id="nutr-qty" placeholder="e.g. 1" min="0.5" step="0.5" inputmode="decimal" oninput="calcFoodNutrition()" onfocus="calcFoodNutrition()" style="flex:1;" />
-    <span id="nutr-unit-label" style="color:#f97316;font-weight:600;font-size:0.9rem;min-width:60px;"></span>
+    <select id="nutr-unit-select" onchange="onUnitChange()" style="width:auto;min-width:80px;flex:0 0 auto;"></select>
   </div>
   <div class="macro-grid" style="margin-top:12px;">
     <div>
@@ -2059,19 +2059,69 @@
     });
   }
 
+  // Unit conversion: how many grams per 1 of each unit
+  const UNIT_GRAMS = { g: 1, kg: 1000, ml: 1, tsp: 5, tbsp: 15, cup: 240, glass: 250, mug: 240 };
+
+  function getAvailableUnits(food) {
+    // Every food gets grams + its default unit + related volume/spoon units
+    const units = [];
+    const def = food.unit;
+    // Add default unit first
+    if (def !== 'g') units.push({ label: def, grams: food.serving });
+    // Always add grams
+    units.push({ label: 'g', grams: 1 });
+    // Add spoon units for small-serving foods
+    if (food.serving <= 30 && def !== 'tsp' && def !== 'tbsp') {
+      if (def !== 'tbsp') units.push({ label: 'tbsp', grams: 15 });
+      if (def !== 'tsp') units.push({ label: 'tsp', grams: 5 });
+    }
+    // Add tbsp/tsp if default is one of them
+    if (def === 'tbsp' && !units.find(u => u.label === 'tsp')) units.push({ label: 'tsp', grams: 5 });
+    if (def === 'tsp' && !units.find(u => u.label === 'tbsp')) units.push({ label: 'tbsp', grams: 15 });
+    // Add cup/glass for liquids and things measured by volume
+    if (['mug', 'glass', 'cup', 'ml'].includes(def)) {
+      if (!units.find(u => u.label === 'ml')) units.push({ label: 'ml', grams: 1 });
+      if (def !== 'cup' && !units.find(u => u.label === 'cup')) units.push({ label: 'cup', grams: 240 });
+      if (def !== 'glass' && !units.find(u => u.label === 'glass')) units.push({ label: 'glass', grams: 250 });
+      if (def !== 'mug' && !units.find(u => u.label === 'mug')) units.push({ label: 'mug', grams: 240 });
+    }
+    return units;
+  }
+
   function selectFood(name) {
     selectedFood = FOOD_DB.find(f => f.name === name);
     document.getElementById('nutr-food-search').value = selectedFood.alt || selectedFood.name;
-    setUnitDisplay(selectedFood);
+    populateUnitSelect(selectedFood);
     document.getElementById('nutr-qty').focus();
     calcFoodNutrition();
   }
 
-  function setUnitDisplay(food) {
-    const label = food.unit === 'g' ? 'grams' : food.unit;
-    document.getElementById('nutr-unit-label').textContent = label;
-    document.getElementById('nutr-qty').placeholder = food.unit === 'g' ? 'e.g. 150' : 'e.g. 1';
-    document.getElementById('nutr-qty').step = food.unit === 'g' ? '10' : '0.5';
+  function populateUnitSelect(food) {
+    const sel = document.getElementById('nutr-unit-select');
+    const units = getAvailableUnits(food);
+    sel.innerHTML = units.map((u, i) => `<option value="${u.label}" ${i === 0 ? 'selected' : ''}>${u.label}</option>`).join('');
+    sel.style.display = '';
+    const def = units[0];
+    document.getElementById('nutr-qty').placeholder = def.label === 'g' ? 'e.g. 150' : 'e.g. 1';
+    document.getElementById('nutr-qty').step = def.label === 'g' ? '10' : '0.5';
+  }
+
+  function onUnitChange() {
+    if (!selectedFood) return;
+    const unit = document.getElementById('nutr-unit-select').value;
+    document.getElementById('nutr-qty').placeholder = unit === 'g' ? 'e.g. 150' : 'e.g. 1';
+    document.getElementById('nutr-qty').step = unit === 'g' ? '10' : '0.5';
+    calcFoodNutrition();
+  }
+
+  function getGramsFromQty() {
+    const qty = parseFloat(document.getElementById('nutr-qty').value) || 0;
+    if (!selectedFood || !qty) return 0;
+    const unit = document.getElementById('nutr-unit-select').value;
+    const units = getAvailableUnits(selectedFood);
+    const match = units.find(u => u.label === unit);
+    if (!match) return 0;
+    return qty * match.grams;
   }
 
   function calcFoodNutrition() {
@@ -2089,12 +2139,11 @@
         );
         if (selectedFood) {
           document.getElementById('nutr-food-search').value = selectedFood.alt || selectedFood.name;
-          setUnitDisplay(selectedFood);
+          populateUnitSelect(selectedFood);
           setMacroFieldsReadonly(true);
         } else {
-          // Not in database — allow manual entry
           setMacroFieldsReadonly(false);
-          document.getElementById('nutr-unit-label').textContent = 'manual';
+          document.getElementById('nutr-unit-select').innerHTML = '<option>manual</option>';
           return;
         }
       }
@@ -2102,18 +2151,20 @@
     if (!selectedFood || !qty) {
       if (!selectedFood && document.getElementById('nutr-food-search').value.trim()) {
         setMacroFieldsReadonly(false);
-        document.getElementById('nutr-unit-label').textContent = 'manual';
+        document.getElementById('nutr-unit-select').innerHTML = '<option>manual</option>';
         return;
       }
       clearNutritionFields();
       return;
     }
     setMacroFieldsReadonly(true);
-    const factor = selectedFood.unit === 'g' ? qty / selectedFood.serving : qty;
-    document.getElementById('nutr-kcal').value = Math.round(selectedFood.kcal * factor);
-    document.getElementById('nutr-protein').value = Math.round(selectedFood.protein * factor * 10) / 10;
-    document.getElementById('nutr-carbs').value = Math.round(selectedFood.carbs * factor * 10) / 10;
-    document.getElementById('nutr-fat').value = Math.round(selectedFood.fat * factor * 10) / 10;
+    const totalGrams = getGramsFromQty();
+    // Nutrition per gram = food values / food serving grams
+    const perGram = { kcal: selectedFood.kcal / selectedFood.serving, protein: selectedFood.protein / selectedFood.serving, carbs: selectedFood.carbs / selectedFood.serving, fat: selectedFood.fat / selectedFood.serving };
+    document.getElementById('nutr-kcal').value = Math.round(perGram.kcal * totalGrams);
+    document.getElementById('nutr-protein').value = Math.round(perGram.protein * totalGrams * 10) / 10;
+    document.getElementById('nutr-carbs').value = Math.round(perGram.carbs * totalGrams * 10) / 10;
+    document.getElementById('nutr-fat').value = Math.round(perGram.fat * totalGrams * 10) / 10;
   }
 
   function setMacroFieldsReadonly(readonly) {
@@ -2129,7 +2180,7 @@
     document.getElementById('nutr-protein').value = '';
     document.getElementById('nutr-carbs').value = '';
     document.getElementById('nutr-fat').value = '';
-    document.getElementById('nutr-unit-label').textContent = '';
+    document.getElementById('nutr-unit-select').innerHTML = '';
   }
 
   // --- Nutrition ---
