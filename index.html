@@ -835,7 +835,7 @@
   </div>
   <label>Quantity</label>
   <div style="display:flex;align-items:center;gap:8px;">
-    <input type="number" id="nutr-qty" placeholder="e.g. 1" min="0.5" step="0.5" inputmode="decimal" oninput="calcFoodNutrition()" onfocus="calcFoodNutrition()" style="flex:1;" />
+    <input type="number" id="nutr-qty" placeholder="e.g. 1" min="0" step="any" inputmode="decimal" oninput="calcFoodNutrition()" onfocus="calcFoodNutrition()" style="flex:1;" />
     <select id="nutr-unit-select" onchange="onUnitChange()" style="width:auto;min-width:80px;flex:0 0 auto;"></select>
   </div>
   <div class="macro-grid" style="margin-top:12px;">
@@ -1921,6 +1921,18 @@
     { name: 'Peanut butter', alt: 'Manteiga de amendoim', unit: 'tbsp', serving: 16, kcal: 94, protein: 4, carbs: 3.2, fat: 8 },
     { name: 'Cashews', alt: 'Cajus', unit: 'handful', serving: 30, kcal: 166, protein: 5.4, carbs: 9, fat: 13 },
     { name: 'Chia seeds', alt: 'Sementes de chia', unit: 'tbsp', serving: 12, kcal: 58, protein: 2, carbs: 5, fat: 3.7 },
+    // Dried fruits
+    { name: 'Raisins', alt: 'Passas', unit: 'handful', serving: 30, kcal: 90, protein: 0.9, carbs: 24, fat: 0.1 },
+    { name: 'Dried apricots', alt: 'Alperces secos', unit: 'unit', serving: 8, kcal: 19, protein: 0.3, carbs: 4.5, fat: 0 },
+    { name: 'Dried figs', alt: 'Figos secos', unit: 'unit', serving: 20, kcal: 50, protein: 0.6, carbs: 12, fat: 0.2 },
+    { name: 'Dates', alt: 'Tâmaras', unit: 'unit', serving: 24, kcal: 67, protein: 0.4, carbs: 18, fat: 0 },
+    { name: 'Dried mango', alt: 'Manga desidratada', unit: 'g', serving: 100, kcal: 319, protein: 2.4, carbs: 78, fat: 0.9 },
+    { name: 'Dried cranberries', alt: 'Arando seco', unit: 'handful', serving: 30, kcal: 93, protein: 0, carbs: 23, fat: 0.4 },
+    { name: 'Dried banana chips', alt: 'Chips de banana', unit: 'handful', serving: 30, kcal: 153, protein: 0.5, carbs: 17, fat: 10 },
+    { name: 'Dried coconut', alt: 'Coco ralado', unit: 'tbsp', serving: 10, kcal: 65, protein: 0.7, carbs: 2.4, fat: 6.2 },
+    { name: 'Prunes', alt: 'Ameixas secas', unit: 'unit', serving: 10, kcal: 24, protein: 0.2, carbs: 6.4, fat: 0 },
+    { name: 'Goji berries', alt: 'Bagas de goji', unit: 'tbsp', serving: 10, kcal: 35, protein: 1.4, carbs: 7.7, fat: 0.1 },
+    { name: 'Trail mix', alt: 'Mix de frutos secos', unit: 'handful', serving: 30, kcal: 155, protein: 4.5, carbs: 13, fat: 10 },
     // Oils & Fats
     { name: 'Olive oil', alt: 'Azeite', unit: 'tbsp', serving: 14, kcal: 124, protein: 0, carbs: 0, fat: 14 },
     { name: 'Coconut oil', alt: 'Óleo de coco', unit: 'tbsp', serving: 14, kcal: 121, protein: 0, carbs: 0, fat: 14 },
@@ -2101,16 +2113,13 @@
     const units = getAvailableUnits(food);
     sel.innerHTML = units.map((u, i) => `<option value="${u.label}" ${i === 0 ? 'selected' : ''}>${u.label}</option>`).join('');
     sel.style.display = '';
-    const def = units[0];
-    document.getElementById('nutr-qty').placeholder = def.label === 'g' ? 'e.g. 150' : 'e.g. 1';
-    document.getElementById('nutr-qty').step = def.label === 'g' ? '10' : '0.5';
+    document.getElementById('nutr-qty').placeholder = units[0].label === 'g' ? 'e.g. 150' : 'e.g. 1';
   }
 
   function onUnitChange() {
     if (!selectedFood) return;
     const unit = document.getElementById('nutr-unit-select').value;
     document.getElementById('nutr-qty').placeholder = unit === 'g' ? 'e.g. 150' : 'e.g. 1';
-    document.getElementById('nutr-qty').step = unit === 'g' ? '10' : '0.5';
     calcFoodNutrition();
   }
 
