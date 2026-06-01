@@ -833,8 +833,11 @@
     <input type="text" id="nutr-food-search" placeholder="Search food (e.g. chicken breast, rice, banana)" autocomplete="off" />
     <div class="autocomplete-dropdown" id="food-dropdown"></div>
   </div>
-  <label>Quantity <span id="nutr-unit-label" style="color:#f97316;"></span></label>
-  <input type="number" id="nutr-qty" placeholder="e.g. 1" min="0.5" step="0.5" inputmode="decimal" oninput="calcFoodNutrition()" onfocus="calcFoodNutrition()" />
+  <label>Quantity</label>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <input type="number" id="nutr-qty" placeholder="e.g. 1" min="0.5" step="0.5" inputmode="decimal" oninput="calcFoodNutrition()" onfocus="calcFoodNutrition()" style="flex:1;" />
+    <span id="nutr-unit-label" style="color:#f97316;font-weight:600;font-size:0.9rem;min-width:60px;"></span>
+  </div>
   <div class="macro-grid" style="margin-top:12px;">
     <div>
       <label style="margin-top:0;color:#f97316;">Calories</label>
@@ -1942,6 +1945,33 @@
     { name: 'Sushi (salmon nigiri)', alt: 'Sushi (nigiri salmão)', unit: 'piece', serving: 35, kcal: 53, protein: 3.2, carbs: 7, fat: 1.2 },
     { name: 'Burger', alt: 'Hambúrguer', unit: 'unit', serving: 200, kcal: 508, protein: 34, carbs: 30, fat: 28 },
     { name: 'French fries', alt: 'Batatas fritas', unit: 'portion', serving: 150, kcal: 468, protein: 5.1, carbs: 62, fat: 23 },
+    // Branded snacks & bars
+    { name: 'Bounty', alt: 'Bounty', unit: 'bar', serving: 57, kcal: 279, protein: 2.5, carbs: 34, fat: 15 },
+    { name: 'KitKat', alt: 'KitKat', unit: 'bar', serving: 41.5, kcal: 213, protein: 2.8, carbs: 26, fat: 11 },
+    { name: 'Mars bar', alt: 'Mars', unit: 'bar', serving: 51, kcal: 228, protein: 2.2, carbs: 35, fat: 8.6 },
+    { name: 'Snickers', alt: 'Snickers', unit: 'bar', serving: 52, kcal: 245, protein: 4.4, carbs: 31, fat: 12 },
+    { name: 'Twix', alt: 'Twix', unit: 'bar', serving: 50, kcal: 250, protein: 2.5, carbs: 32, fat: 12.5 },
+    { name: 'Kinder Bueno', alt: 'Kinder Bueno', unit: 'bar', serving: 43, kcal: 244, protein: 3.9, carbs: 24, fat: 15 },
+    { name: 'Oreo', alt: 'Oreo', unit: 'cookie', serving: 11, kcal: 53, protein: 0.5, carbs: 8, fat: 2.2 },
+    { name: 'Digestive biscuit', alt: 'Bolacha digestiva', unit: 'unit', serving: 15, kcal: 71, protein: 1.1, carbs: 10, fat: 3 },
+    { name: 'Croissant', alt: 'Croissant', unit: 'unit', serving: 60, kcal: 247, protein: 4.8, carbs: 27, fat: 13 },
+    { name: 'Muffin (chocolate)', alt: 'Muffin (chocolate)', unit: 'unit', serving: 115, kcal: 420, protein: 5.5, carbs: 52, fat: 21 },
+    { name: 'Crisps (packet)', alt: 'Batatas fritas (pacote)', unit: 'packet', serving: 30, kcal: 159, protein: 1.8, carbs: 15, fat: 10 },
+    { name: 'Popcorn', alt: 'Pipocas', unit: 'cup', serving: 30, kcal: 120, protein: 3.5, carbs: 20, fat: 3 },
+    { name: 'Nutella', alt: 'Nutella', unit: 'tbsp', serving: 15, kcal: 80, protein: 0.9, carbs: 8.4, fat: 4.7 },
+    // More common foods
+    { name: 'Ham (sliced)', alt: 'Fiambre', unit: 'slice', serving: 20, kcal: 22, protein: 3.6, carbs: 0.2, fat: 0.8 },
+    { name: 'Tuna salad', alt: 'Salada de atum', unit: 'portion', serving: 150, kcal: 190, protein: 20, carbs: 5, fat: 10 },
+    { name: 'Soup (vegetable)', alt: 'Sopa de legumes', unit: 'bowl', serving: 250, kcal: 75, protein: 2.5, carbs: 12, fat: 1.5 },
+    { name: 'Cereal bar', alt: 'Barra de cereais', unit: 'bar', serving: 25, kcal: 100, protein: 1.5, carbs: 18, fat: 2.8 },
+    { name: 'Yogurt (natural)', alt: 'Iogurte natural', unit: 'pot', serving: 125, kcal: 79, protein: 5.6, carbs: 6.3, fat: 3.5 },
+    { name: 'Yogurt (fruit)', alt: 'Iogurte de fruta', unit: 'pot', serving: 125, kcal: 113, protein: 4.5, carbs: 17, fat: 2.8 },
+    { name: 'Ice cream', alt: 'Gelado', unit: 'scoop', serving: 65, kcal: 140, protein: 2.3, carbs: 17, fat: 7 },
+    { name: 'Crackers', alt: 'Crackers', unit: 'unit', serving: 7, kcal: 30, protein: 0.7, carbs: 5, fat: 0.9 },
+    { name: 'Toast with butter', alt: 'Torrada com manteiga', unit: 'slice', serving: 44, kcal: 180, protein: 2.8, carbs: 15, fat: 12 },
+    { name: 'Pancake', alt: 'Panqueca', unit: 'unit', serving: 40, kcal: 92, protein: 3, carbs: 11, fat: 4 },
+    { name: 'Wrap (chicken)', alt: 'Wrap de frango', unit: 'unit', serving: 200, kcal: 360, protein: 24, carbs: 36, fat: 12 },
+    { name: 'Sandwich (ham & cheese)', alt: 'Sandes (fiambre e queijo)', unit: 'unit', serving: 150, kcal: 340, protein: 18, carbs: 32, fat: 15 },
   ];
 
   let selectedFood = null;
@@ -2032,12 +2062,16 @@
   function selectFood(name) {
     selectedFood = FOOD_DB.find(f => f.name === name);
     document.getElementById('nutr-food-search').value = selectedFood.alt || selectedFood.name;
-    const unitLabel = selectedFood.unit === 'g' ? '(grams)' : `(${selectedFood.unit})`;
-    document.getElementById('nutr-unit-label').textContent = unitLabel;
-    document.getElementById('nutr-qty').placeholder = selectedFood.unit === 'g' ? 'e.g. 150' : 'e.g. 1';
-    document.getElementById('nutr-qty').step = selectedFood.unit === 'g' ? '10' : '0.5';
+    setUnitDisplay(selectedFood);
     document.getElementById('nutr-qty').focus();
     calcFoodNutrition();
+  }
+
+  function setUnitDisplay(food) {
+    const label = food.unit === 'g' ? 'grams' : food.unit;
+    document.getElementById('nutr-unit-label').textContent = label;
+    document.getElementById('nutr-qty').placeholder = food.unit === 'g' ? 'e.g. 150' : 'e.g. 1';
+    document.getElementById('nutr-qty').step = food.unit === 'g' ? '10' : '0.5';
   }
 
   function calcFoodNutrition() {
@@ -2046,7 +2080,6 @@
     if (!selectedFood) {
       const typed = document.getElementById('nutr-food-search').value.trim().toLowerCase();
       if (typed) {
-        // Try exact match first, then starts-with
         selectedFood = FOOD_DB.find(f =>
           f.name.toLowerCase() === typed ||
           (f.alt && f.alt.toLowerCase() === typed)
@@ -2056,24 +2089,39 @@
         );
         if (selectedFood) {
           document.getElementById('nutr-food-search').value = selectedFood.alt || selectedFood.name;
-          const unitLabel = selectedFood.unit === 'g' ? '(grams)' : `(${selectedFood.unit})`;
-          document.getElementById('nutr-unit-label').textContent = unitLabel;
-          document.getElementById('nutr-qty').placeholder = selectedFood.unit === 'g' ? 'e.g. 150' : 'e.g. 1';
-          document.getElementById('nutr-qty').step = selectedFood.unit === 'g' ? '10' : '0.5';
+          setUnitDisplay(selectedFood);
+          setMacroFieldsReadonly(true);
+        } else {
+          // Not in database — allow manual entry
+          setMacroFieldsReadonly(false);
+          document.getElementById('nutr-unit-label').textContent = 'manual';
+          return;
         }
       }
     }
     if (!selectedFood || !qty) {
+      if (!selectedFood && document.getElementById('nutr-food-search').value.trim()) {
+        setMacroFieldsReadonly(false);
+        document.getElementById('nutr-unit-label').textContent = 'manual';
+        return;
+      }
       clearNutritionFields();
       return;
     }
-    // For 'g' unit: factor = qty / serving (e.g. 150g / 100g serving = 1.5x)
-    // For other units: factor = qty (e.g. 2 eggs = 2x the per-serving values)
+    setMacroFieldsReadonly(true);
     const factor = selectedFood.unit === 'g' ? qty / selectedFood.serving : qty;
     document.getElementById('nutr-kcal').value = Math.round(selectedFood.kcal * factor);
     document.getElementById('nutr-protein').value = Math.round(selectedFood.protein * factor * 10) / 10;
     document.getElementById('nutr-carbs').value = Math.round(selectedFood.carbs * factor * 10) / 10;
     document.getElementById('nutr-fat').value = Math.round(selectedFood.fat * factor * 10) / 10;
+  }
+
+  function setMacroFieldsReadonly(readonly) {
+    ['nutr-kcal', 'nutr-protein', 'nutr-carbs', 'nutr-fat'].forEach(id => {
+      document.getElementById(id).readOnly = readonly;
+      document.getElementById(id).style.opacity = readonly ? '1' : '0.9';
+      document.getElementById(id).style.borderColor = readonly ? '#333' : '#f97316';
+    });
   }
 
   function clearNutritionFields() {
