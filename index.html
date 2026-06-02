@@ -2499,12 +2499,18 @@
   let lastScannedBarcode = null;
   let barcodeProcessing = false;
 
-  async function onBarcodeDetected(code) {
+  function onBarcodeDetected(code) {
     if (barcodeProcessing) return;
     barcodeProcessing = true;
+    // Defer everything — can't stop the scanner from inside its own callback
+    setTimeout(() => processBarcode(code), 0);
+  }
 
+  async function processBarcode(code) {
     // Close the modal immediately — never leave user stuck
-    cancelBarcodeScan();
+    document.getElementById('barcode-modal').style.display = 'none';
+    if (barcodeScanner) barcodeScanner.stop().catch(() => {});
+    barcodeScannerRunning = false;
     lastScannedBarcode = code;
     showToast(`Scanned ${code} — looking up...`, '#6b7280');
 
