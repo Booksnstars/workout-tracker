@@ -940,14 +940,15 @@
 <div class="toast" id="toast"></div>
 
 <!-- Barcode Scanner Modal -->
-<div id="barcode-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:1000;flex-direction:column;align-items:center;justify-content:center;">
+<div id="barcode-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:1000;flex-direction:column;align-items:center;justify-content:flex-start;">
   <div style="width:100%;max-width:500px;padding:20px;text-align:center;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <h3 style="color:#f0f0f0;font-size:1.1rem;">Scan Barcode</h3>
-      <button onclick="stopBarcodeScan()" style="background:none;border:none;color:#f0f0f0;font-size:1.5rem;cursor:pointer;">&times;</button>
+      <button onclick="cancelBarcodeScan()" style="background:#dc2626;border:none;color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer;padding:10px 20px;border-radius:8px;">Close</button>
     </div>
     <div id="barcode-reader" style="width:100%;border-radius:12px;overflow:hidden;"></div>
-    <p id="barcode-status" style="color:#888;font-size:0.85rem;margin-top:12px;">Point your camera at a barcode</p>
+    <p id="barcode-status" style="color:#ccc;font-size:0.9rem;margin-top:16px;">Point your camera at a barcode</p>
+    <button onclick="cancelBarcodeScan()" style="margin-top:20px;background:#333;border:none;color:#fff;font-size:1rem;font-weight:600;cursor:pointer;padding:14px 40px;border-radius:10px;width:100%;">Cancel</button>
   </div>
 </div>
 
@@ -2486,6 +2487,14 @@
     modal.style.display = 'none';
   }
 
+  function cancelBarcodeScan() {
+    const modal = document.getElementById('barcode-modal');
+    if (barcodeScanner && barcodeScannerRunning) {
+      barcodeScanner.stop().then(() => { barcodeScannerRunning = false; }).catch(() => {});
+    }
+    modal.style.display = 'none';
+  }
+
   let lastScannedBarcode = null;
 
   async function onBarcodeDetected(code) {
@@ -2493,9 +2502,15 @@
     barcodeScanner.pause(true);
     lastScannedBarcode = code;
 
+    const timeout = ms => new Promise((_, reject) => setTimeout(() => reject('timeout'), ms));
+
     try {
-      // 1. Check our own saved barcodes first
-      const saved = await api(`/api/barcodes?code=${code}`).catch(() => null);
+      // 1. Check our own saved barcodes first (3s timeout)
+      const saved = await Promise.race([
+        api(`/api/barcodes?code=${code}`).catch(() => null),
+        timeout(3000)
+      ]).catch(() => null);
+
       if (saved) {
         stopBarcodeScan();
         fillFromSavedBarcode(saved);
@@ -2503,8 +2518,12 @@
         return;
       }
 
-      // 2. Try Open Food Facts
-      const product = await lookupBarcode(code);
+      // 2. Try Open Food Facts (5s timeout)
+      const product = await Promise.race([
+        lookupBarcode(code),
+        timeout(5000)
+      ]).catch(() => null);
+
       stopBarcodeScan();
       if (product) {
         fillFromBarcode(product);
@@ -2514,7 +2533,6 @@
       }
 
       // 3. Not found anywhere — manual entry mode
-      stopBarcodeScan();
       selectedFood = null;
       document.getElementById('nutr-food-search').value = '';
       document.getElementById('nutr-food-search').placeholder = 'Enter product name from label';
