@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gym Workout Tracker</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -829,9 +830,14 @@
     <option value="other">Other</option>
   </select>
   <label>Food</label>
-  <div class="autocomplete-wrap">
-    <input type="text" id="nutr-food-search" placeholder="Search food (e.g. chicken breast, rice, banana)" autocomplete="off" />
-    <div class="autocomplete-dropdown" id="food-dropdown"></div>
+  <div class="autocomplete-wrap" style="display:flex;gap:8px;align-items:center;">
+    <div style="flex:1;position:relative;">
+      <input type="text" id="nutr-food-search" placeholder="Search food (e.g. chicken breast, rice, banana)" autocomplete="off" />
+      <div class="autocomplete-dropdown" id="food-dropdown"></div>
+    </div>
+    <button class="btn" onclick="startBarcodeScan()" style="flex:0 0 auto;padding:8px 12px;background:#2a2a2a;border:1px solid #444;border-radius:8px;" title="Scan barcode">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="7" y1="8" x2="7" y2="16"/><line x1="10" y1="8" x2="10" y2="16"/><line x1="13" y1="8" x2="13" y2="16"/><line x1="17" y1="8" x2="17" y2="16"/></svg>
+    </button>
   </div>
   <label>Quantity</label>
   <div style="display:flex;align-items:center;gap:8px;">
@@ -891,6 +897,18 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Barcode Scanner Modal -->
+<div id="barcode-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:1000;flex-direction:column;align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:500px;padding:20px;text-align:center;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="color:#f0f0f0;font-size:1.1rem;">Scan Barcode</h3>
+      <button onclick="stopBarcodeScan()" style="background:none;border:none;color:#f0f0f0;font-size:1.5rem;cursor:pointer;">&times;</button>
+    </div>
+    <div id="barcode-reader" style="width:100%;border-radius:12px;overflow:hidden;"></div>
+    <p id="barcode-status" style="color:#888;font-size:0.85rem;margin-top:12px;">Point your camera at a barcode</p>
+  </div>
+</div>
 
 <script>
   // --- API helpers ---
@@ -2041,6 +2059,42 @@
     { name: 'Smoked salmon', unit: 'slice', serving: 30, kcal: 55, protein: 6, carbs: 0, fat: 3.3 },
     { name: 'Sardines (canned)', unit: 'can', serving: 90, kcal: 191, protein: 22, carbs: 0, fat: 11 },
     { name: 'Lamb chop', unit: 'unit', serving: 100, kcal: 282, protein: 24, carbs: 0, fat: 20 },
+    // UK supermarket ready meals & common items
+    { name: 'Chicken tikka masala (ready meal)', unit: 'meal', serving: 400, kcal: 560, protein: 28, carbs: 60, fat: 22 },
+    { name: 'Lasagne (ready meal)', unit: 'meal', serving: 400, kcal: 520, protein: 24, carbs: 48, fat: 24 },
+    { name: 'Spaghetti bolognese (ready meal)', unit: 'meal', serving: 400, kcal: 480, protein: 22, carbs: 56, fat: 16 },
+    { name: 'Mac and cheese (ready meal)', unit: 'meal', serving: 350, kcal: 490, protein: 18, carbs: 44, fat: 26 },
+    { name: 'Shepherd\'s pie (ready meal)', unit: 'meal', serving: 400, kcal: 440, protein: 20, carbs: 44, fat: 20 },
+    { name: 'Cottage pie (ready meal)', unit: 'meal', serving: 400, kcal: 460, protein: 22, carbs: 42, fat: 22 },
+    { name: 'Chicken korma (ready meal)', unit: 'meal', serving: 400, kcal: 600, protein: 26, carbs: 52, fat: 30 },
+    { name: 'Thai green curry (ready meal)', unit: 'meal', serving: 400, kcal: 520, protein: 22, carbs: 48, fat: 26 },
+    { name: 'Chilli con carne (ready meal)', unit: 'meal', serving: 400, kcal: 440, protein: 24, carbs: 48, fat: 14 },
+    { name: 'Fish pie (ready meal)', unit: 'meal', serving: 400, kcal: 440, protein: 22, carbs: 40, fat: 20 },
+    { name: 'Chicken & bacon pasta (ready meal)', unit: 'meal', serving: 400, kcal: 540, protein: 26, carbs: 52, fat: 24 },
+    { name: 'Sweet & sour chicken (ready meal)', unit: 'meal', serving: 400, kcal: 480, protein: 20, carbs: 68, fat: 12 },
+    { name: 'Roast chicken dinner (ready meal)', unit: 'meal', serving: 400, kcal: 420, protein: 28, carbs: 40, fat: 16 },
+    { name: 'Chicken fajita kit', unit: 'meal', serving: 350, kcal: 450, protein: 28, carbs: 44, fat: 16 },
+    { name: 'Naan bread', unit: 'unit', serving: 130, kcal: 366, protein: 9.4, carbs: 56, fat: 12 },
+    { name: 'Garlic bread', unit: 'slice', serving: 50, kcal: 168, protein: 3.5, carbs: 18, fat: 9 },
+    { name: 'Chips (oven)', unit: 'portion', serving: 200, kcal: 330, protein: 5, carbs: 50, fat: 12 },
+    { name: 'Baked beans', unit: 'can', serving: 200, kcal: 162, protein: 10, carbs: 24, fat: 0.6 },
+    { name: 'Beans on toast', unit: 'portion', serving: 280, kcal: 340, protein: 14, carbs: 52, fat: 6 },
+    { name: 'Fish fingers', unit: 'unit', serving: 28, kcal: 58, protein: 3.5, carbs: 5, fat: 2.8 },
+    { name: 'Chicken nuggets', unit: 'unit', serving: 20, kcal: 48, protein: 3, carbs: 3.2, fat: 2.5 },
+    { name: 'Sausage roll', unit: 'unit', serving: 70, kcal: 240, protein: 6.5, carbs: 18, fat: 16 },
+    { name: 'Cornish pasty', unit: 'unit', serving: 150, kcal: 420, protein: 11, carbs: 36, fat: 26 },
+    { name: 'Scotch egg', unit: 'unit', serving: 120, kcal: 300, protein: 14, carbs: 14, fat: 21 },
+    { name: 'Pork pie', unit: 'unit', serving: 75, kcal: 260, protein: 10, carbs: 16, fat: 17 },
+    { name: 'Coleslaw', unit: 'tbsp', serving: 30, kcal: 48, protein: 0.3, carbs: 3, fat: 3.8 },
+    { name: 'Pot noodle', unit: 'pot', serving: 90, kcal: 396, protein: 8, carbs: 54, fat: 16 },
+    { name: 'Cup-a-soup', unit: 'sachet', serving: 24, kcal: 90, protein: 1.5, carbs: 13, fat: 3.5 },
+    { name: 'Houmous', unit: 'tbsp', serving: 30, kcal: 50, protein: 2.4, carbs: 4.2, fat: 3 },
+    { name: 'Meal deal sandwich', unit: 'unit', serving: 200, kcal: 420, protein: 20, carbs: 38, fat: 20 },
+    { name: 'Meal deal wrap', unit: 'unit', serving: 220, kcal: 450, protein: 22, carbs: 42, fat: 20 },
+    { name: 'Rotisserie chicken (quarter)', unit: 'quarter', serving: 200, kcal: 380, protein: 42, carbs: 0, fat: 22 },
+    { name: 'Jacket potato (plain)', unit: 'unit', serving: 300, kcal: 258, protein: 7, carbs: 57, fat: 0.3 },
+    { name: 'Jacket potato with beans', unit: 'unit', serving: 450, kcal: 380, protein: 15, carbs: 72, fat: 2 },
+    { name: 'Jacket potato with cheese', unit: 'unit', serving: 380, kcal: 480, protein: 16, carbs: 58, fat: 20 },
   ];
 
   let selectedFood = null;
@@ -2357,6 +2411,155 @@
     selectedFood = null;
   }
 
+  // --- Barcode Scanner ---
+  let barcodeScanner = null;
+
+  function startBarcodeScan() {
+    const modal = document.getElementById('barcode-modal');
+    modal.style.display = 'flex';
+    document.getElementById('barcode-status').textContent = 'Point your camera at a barcode';
+    barcodeScanner = new Html5Qrcode('barcode-reader');
+    barcodeScanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 280, height: 150 }, formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E] },
+      onBarcodeDetected,
+      () => {}
+    ).catch(err => {
+      showToast('Camera access denied. Check permissions.', '#dc2626');
+      stopBarcodeScan();
+    });
+  }
+
+  function stopBarcodeScan() {
+    const modal = document.getElementById('barcode-modal');
+    if (barcodeScanner) {
+      barcodeScanner.stop().catch(() => {});
+      barcodeScanner.clear();
+      barcodeScanner = null;
+    }
+    modal.style.display = 'none';
+  }
+
+  let lastScannedBarcode = null;
+
+  async function onBarcodeDetected(code) {
+    document.getElementById('barcode-status').textContent = `Scanned: ${code} — looking up...`;
+    await barcodeScanner.stop().catch(() => {});
+    lastScannedBarcode = code;
+
+    // 1. Check our own saved barcodes first
+    const saved = await api(`/api/barcodes?code=${code}`);
+    if (saved) {
+      stopBarcodeScan();
+      fillFromSavedBarcode(saved);
+      showToast('Product found!', '#22c55e');
+      return;
+    }
+
+    // 2. Try Open Food Facts
+    const product = await lookupBarcode(code);
+    stopBarcodeScan();
+    if (product) {
+      fillFromBarcode(product);
+      showToast('Product found! It will be saved for next time.', '#22c55e');
+      saveBarcode(code, product);
+      return;
+    }
+
+    // 3. Not found anywhere — manual entry mode
+    selectedFood = null;
+    document.getElementById('nutr-food-search').value = '';
+    document.getElementById('nutr-food-search').placeholder = 'Enter product name from label';
+    document.getElementById('nutr-qty').value = '';
+    document.getElementById('nutr-unit-select').innerHTML = '<option value="g" selected>g</option>';
+    setMacroFieldsReadonly(false);
+    clearNutritionFields();
+    document.getElementById('nutr-food-search').focus();
+    showToast(`Not found online. Enter details from the label — it will be saved for next time.`, '#f97316');
+  }
+
+  function fillFromSavedBarcode(saved) {
+    selectedFood = null;
+    lastScannedBarcode = null;
+    document.getElementById('nutr-food-search').value = saved.name;
+    document.getElementById('nutr-qty').value = saved.serving_g;
+    document.getElementById('nutr-unit-select').innerHTML = '<option value="g" selected>g</option>';
+    document.getElementById('nutr-kcal').value = saved.kcal;
+    document.getElementById('nutr-protein').value = saved.protein;
+    document.getElementById('nutr-carbs').value = saved.carbs;
+    document.getElementById('nutr-fat').value = saved.fat;
+    setMacroFieldsReadonly(false);
+  }
+
+  async function saveBarcode(code, product) {
+    const name = [product.product_name, product.brands].filter(Boolean).join(' - ');
+    let servingGrams = 100;
+    if (product.serving_size) {
+      const m = product.serving_size.match(/(\d+\.?\d*)\s*(g|ml)/i);
+      if (m) servingGrams = parseFloat(m[1]);
+    }
+    const n = product.nutriments;
+    const factor = servingGrams / 100;
+    await api('/api/barcodes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        barcode: code, name, serving_g: servingGrams,
+        kcal: Math.round((n['energy-kcal_100g'] || 0) * factor),
+        protein: Math.round(((n.proteins_100g || 0) * factor) * 10) / 10,
+        carbs: Math.round(((n.carbohydrates_100g || 0) * factor) * 10) / 10,
+        fat: Math.round(((n.fat_100g || 0) * factor) * 10) / 10,
+      })
+    });
+  }
+
+  async function lookupBarcode(barcode) {
+    const headers = { 'User-Agent': 'GymTracker/1.0 (workout.sardine.dev)' };
+    try {
+      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,brands,nutriments,serving_size`, { headers });
+      const data = await res.json();
+      if (data.status === 1 && data.product && data.product.nutriments) return data.product;
+      // Try with leading zero (some scanners strip it)
+      if (barcode.length === 12) {
+        const res2 = await fetch(`https://world.openfoodfacts.org/api/v2/product/0${barcode}.json?fields=product_name,brands,nutriments,serving_size`, { headers });
+        const data2 = await res2.json();
+        if (data2.status === 1 && data2.product && data2.product.nutriments) return data2.product;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function fillFromBarcode(product) {
+    selectedFood = null;
+    const name = [product.product_name, product.brands].filter(Boolean).join(' - ');
+    document.getElementById('nutr-food-search').value = name;
+
+    // Parse serving size: e.g. "250 g", "100g", "1 portion (350ml)"
+    let servingGrams = 100;
+    if (product.serving_size) {
+      const match = product.serving_size.match(/(\d+\.?\d*)\s*(g|ml)/i);
+      if (match) servingGrams = parseFloat(match[1]);
+    }
+
+    const n = product.nutriments;
+    const factor = servingGrams / 100;
+    const kcal = Math.round((n['energy-kcal_100g'] || n['energy-kcal'] || 0) * factor);
+    const protein = Math.round(((n.proteins_100g || 0) * factor) * 10) / 10;
+    const carbs = Math.round(((n.carbohydrates_100g || 0) * factor) * 10) / 10;
+    const fat = Math.round(((n.fat_100g || 0) * factor) * 10) / 10;
+
+    document.getElementById('nutr-qty').value = servingGrams;
+    const unitSel = document.getElementById('nutr-unit-select');
+    unitSel.innerHTML = '<option value="g" selected>g</option>';
+    document.getElementById('nutr-kcal').value = kcal;
+    document.getElementById('nutr-protein').value = protein;
+    document.getElementById('nutr-carbs').value = carbs;
+    document.getElementById('nutr-fat').value = fat;
+    setMacroFieldsReadonly(false);
+  }
+
   async function logMeal() {
     const d = getMealFormData();
     if (!d.name) { showToast('Select a food.', '#dc2626'); return; }
@@ -2366,9 +2569,24 @@
         method: 'POST',
         body: JSON.stringify({ ...d, date: offsetDate(nutritionDayOffset) })
       });
+      // Save barcode if this was a manual entry from a scan
+      if (lastScannedBarcode && d.name && d.kcal) {
+        await api('/api/barcodes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            barcode: lastScannedBarcode, name: d.name,
+            serving_g: parseFloat(document.getElementById('nutr-qty').value) || 100,
+            kcal: d.kcal, protein: d.protein, carbs: d.carbs, fat: d.fat,
+          })
+        });
+        lastScannedBarcode = null;
+        showToast('Meal logged & barcode saved!');
+      } else {
+        showToast('Meal logged!');
+      }
       clearMealForm();
       renderNutritionPage();
-      showToast('Meal logged! 🍽️');
     } catch {
       showToast('Failed to save. Try again.', '#dc2626');
     }

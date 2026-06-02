@@ -83,3 +83,15 @@ CREATE TABLE IF NOT EXISTS saved_meals (
   created_at INTEGER NOT NULL,
   UNIQUE(user_id, name)
 );
+
+CREATE TABLE IF NOT EXISTS barcodes (
+  barcode TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  name TEXT NOT NULL,
+  serving_g REAL NOT NULL DEFAULT 100,
+  kcal INTEGER NOT NULL DEFAULT 0,
+  protein REAL NOT NULL DEFAULT 0,
+  carbs REAL NOT NULL DEFAULT 0,
+  fat REAL NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
