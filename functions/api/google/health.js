@@ -7,12 +7,10 @@ async function getValidToken(context, userId) {
 
   if (!row) return null;
 
-  // If token is still valid (with 60s buffer)
   if (row.expires_at > Date.now() + 60000) {
     return row.access_token;
   }
 
-  // Refresh the token
   if (!row.refresh_token) return null;
 
   const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -49,53 +47,77 @@ export async function onRequestGet(context) {
   const url = new URL(context.request.url);
   const date = url.searchParams.get('date') || new Date().toISOString().split('T')[0];
 
-  // Fetch daily calories burned and steps
-  const [caloriesData, stepsData] = await Promise.all([
-    fetchDailyData(token, 'caloriesBurned', date),
-    fetchDailyData(token, 'steps', date),
+  // Calculate start/end of day in millis
+  const startMs = new Date(date + 'T00:00:00').getTime();
+  const endMs = new Date(date + 'T23:59:59.999').getTime();
+
+  const [steps, calories] = await Promise.all([
+    fetchFitData(token, 'com.google.step_count.delta', 'derived:com.google.step_count.delta:com.google.android.gms:estimated_steps', startMs, endMs),
+    fetchFitData(token, 'com.google.calories.expended', 'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended', startMs, endMs),
   ]);
 
   return Response.json({
     connected: true,
     date,
-    calories_burned: caloriesData,
-    steps: stepsData,
+    steps: steps,
+    calories_burned: calories,
   });
 }
 
-async function fetchDailyData(token, dataType, date) {
-  const startDate = date;
-  const endDate = date;
-
+async function fetchFitData(token, dataTypeName, dataSourceId, startMs, endMs) {
   try {
-    const res = await fetch(
-      `https://health.googleapis.com/v4/users/me/dataTypes/${dataType}/dataPoints:dailyRollUp`, {
+    const res = await fetch('https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        aggregateBy: [{ dataTypeName, dataSourceId }],
+        bucketByTime: { durationMillis: endMs - startMs + 1 },
+        startTimeMillis: startMs,
+        endTimeMillis: endMs,
+      }),
+    });
+
+    if (!res.ok) {
+      // Try without dataSourceId (some accounts have different sources)
+      const res2 = await fetch('https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          startDate: { year: parseInt(startDate.split('-')[0]), month: parseInt(startDate.split('-')[1]), day: parseInt(startDate.split('-')[2]) },
-          endDate: { year: parseInt(endDate.split('-')[0]), month: parseInt(endDate.split('-')[1]), day: parseInt(endDate.split('-')[2]) },
+          aggregateBy: [{ dataTypeName }],
+          bucketByTime: { durationMillis: endMs - startMs + 1 },
+          startTimeMillis: startMs,
+          endTimeMillis: endMs,
         }),
-      }
-    );
-
-    if (!res.ok) {
-      const err = await res.text();
-      return { error: err, value: 0 };
+      });
+      if (!res2.ok) return { value: 0 };
+      const data2 = await res2.json();
+      return extractValue(data2);
     }
 
     const data = await res.json();
-    // Extract the rolled-up value
-    const points = data.dataPoints || [];
-    if (points.length === 0) return { value: 0 };
-
-    const point = points[0];
-    const val = point.intVal || point.floatVal || point.values?.[0]?.intVal || point.values?.[0]?.floatVal || 0;
-    return { value: Math.round(typeof val === 'number' ? val : 0) };
+    return extractValue(data);
   } catch (e) {
-    return { value: 0, error: e.message };
+    return { value: 0 };
   }
+}
+
+function extractValue(data) {
+  let total = 0;
+  const buckets = data.bucket || [];
+  for (const bucket of buckets) {
+    for (const dataset of (bucket.dataset || [])) {
+      for (const point of (dataset.point || [])) {
+        for (const val of (point.value || [])) {
+          total += val.intVal || val.fpVal || 0;
+        }
+      }
+    }
+  }
+  return { value: Math.round(total) };
 }
