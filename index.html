@@ -2413,18 +2413,25 @@
 
   // --- Barcode Scanner ---
   let barcodeScanner = null;
+  let barcodeScannerRunning = false;
 
   function startBarcodeScan() {
     const modal = document.getElementById('barcode-modal');
     modal.style.display = 'flex';
     document.getElementById('barcode-status').textContent = 'Point your camera at a barcode';
-    barcodeScanner = new Html5Qrcode('barcode-reader');
+
+    if (barcodeScanner && barcodeScannerRunning) {
+      barcodeScanner.resume();
+      return;
+    }
+
+    if (!barcodeScanner) barcodeScanner = new Html5Qrcode('barcode-reader');
     barcodeScanner.start(
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 280, height: 150 }, formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E] },
       onBarcodeDetected,
       () => {}
-    ).catch(err => {
+    ).then(() => { barcodeScannerRunning = true; }).catch(err => {
       showToast('Camera access denied. Check permissions.', '#dc2626');
       stopBarcodeScan();
     });
@@ -2432,10 +2439,8 @@
 
   function stopBarcodeScan() {
     const modal = document.getElementById('barcode-modal');
-    if (barcodeScanner) {
-      barcodeScanner.stop().catch(() => {});
-      barcodeScanner.clear();
-      barcodeScanner = null;
+    if (barcodeScanner && barcodeScannerRunning) {
+      barcodeScanner.pause(true);
     }
     modal.style.display = 'none';
   }
@@ -2444,7 +2449,7 @@
 
   async function onBarcodeDetected(code) {
     document.getElementById('barcode-status').textContent = `Scanned: ${code} — looking up...`;
-    await barcodeScanner.stop().catch(() => {});
+    barcodeScanner.pause(true);
     lastScannedBarcode = code;
 
     // 1. Check our own saved barcodes first
