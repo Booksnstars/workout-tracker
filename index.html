@@ -2493,35 +2493,41 @@
     barcodeScanner.pause(true);
     lastScannedBarcode = code;
 
-    // 1. Check our own saved barcodes first
-    const saved = await api(`/api/barcodes?code=${code}`);
-    if (saved) {
+    try {
+      // 1. Check our own saved barcodes first
+      const saved = await api(`/api/barcodes?code=${code}`).catch(() => null);
+      if (saved) {
+        stopBarcodeScan();
+        fillFromSavedBarcode(saved);
+        showToast('Product found!', '#22c55e');
+        return;
+      }
+
+      // 2. Try Open Food Facts
+      const product = await lookupBarcode(code);
       stopBarcodeScan();
-      fillFromSavedBarcode(saved);
-      showToast('Product found!', '#22c55e');
-      return;
-    }
+      if (product) {
+        fillFromBarcode(product);
+        showToast('Product found! It will be saved for next time.', '#22c55e');
+        saveBarcode(code, product).catch(() => {});
+        return;
+      }
 
-    // 2. Try Open Food Facts
-    const product = await lookupBarcode(code);
-    stopBarcodeScan();
-    if (product) {
-      fillFromBarcode(product);
-      showToast('Product found! It will be saved for next time.', '#22c55e');
-      saveBarcode(code, product);
-      return;
+      // 3. Not found anywhere — manual entry mode
+      stopBarcodeScan();
+      selectedFood = null;
+      document.getElementById('nutr-food-search').value = '';
+      document.getElementById('nutr-food-search').placeholder = 'Enter product name from label';
+      document.getElementById('nutr-qty').value = '';
+      document.getElementById('nutr-unit-select').innerHTML = '<option value="g" selected>g</option>';
+      setMacroFieldsReadonly(false);
+      clearNutritionFields();
+      document.getElementById('nutr-food-search').focus();
+      showToast(`Not found online. Enter details from the label — it will be saved for next time.`, '#f97316');
+    } catch (e) {
+      stopBarcodeScan();
+      showToast('Something went wrong. Try again.', '#dc2626');
     }
-
-    // 3. Not found anywhere — manual entry mode
-    selectedFood = null;
-    document.getElementById('nutr-food-search').value = '';
-    document.getElementById('nutr-food-search').placeholder = 'Enter product name from label';
-    document.getElementById('nutr-qty').value = '';
-    document.getElementById('nutr-unit-select').innerHTML = '<option value="g" selected>g</option>';
-    setMacroFieldsReadonly(false);
-    clearNutritionFields();
-    document.getElementById('nutr-food-search').focus();
-    showToast(`Not found online. Enter details from the label — it will be saved for next time.`, '#f97316');
   }
 
   function fillFromSavedBarcode(saved) {
