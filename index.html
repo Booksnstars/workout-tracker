@@ -2460,6 +2460,7 @@
   function startBarcodeScan() {
     const modal = document.getElementById('barcode-modal');
     modal.style.display = 'flex';
+    barcodeProcessing = false;
     document.getElementById('barcode-status').textContent = 'Point your camera at a barcode';
 
     if (barcodeScanner && barcodeScannerRunning) {
@@ -2497,7 +2498,11 @@
 
   let lastScannedBarcode = null;
 
+  let barcodeProcessing = false;
+
   async function onBarcodeDetected(code) {
+    if (barcodeProcessing) return;
+    barcodeProcessing = true;
     document.getElementById('barcode-status').textContent = `Scanned: ${code} — looking up...`;
     barcodeScanner.pause(true);
     lastScannedBarcode = code;
@@ -2545,6 +2550,8 @@
     } catch (e) {
       stopBarcodeScan();
       showToast('Something went wrong. Try again.', '#dc2626');
+    } finally {
+      barcodeProcessing = false;
     }
   }
 
