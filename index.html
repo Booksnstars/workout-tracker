@@ -2497,47 +2497,38 @@
   }
 
   let lastScannedBarcode = null;
-
   let barcodeProcessing = false;
 
   async function onBarcodeDetected(code) {
     if (barcodeProcessing) return;
     barcodeProcessing = true;
-    document.getElementById('barcode-status').textContent = `Scanned: ${code} — looking up...`;
-    barcodeScanner.pause(true);
-    lastScannedBarcode = code;
 
-    const timeout = ms => new Promise((_, reject) => setTimeout(() => reject('timeout'), ms));
+    // Close the modal immediately — never leave user stuck
+    cancelBarcodeScan();
+    lastScannedBarcode = code;
+    showToast(`Scanned ${code} — looking up...`, '#6b7280');
 
     try {
-      // 1. Check our own saved barcodes first (3s timeout)
-      const saved = await Promise.race([
-        api(`/api/barcodes?code=${code}`).catch(() => null),
-        timeout(3000)
-      ]).catch(() => null);
-
+      // 1. Check our own saved barcodes
+      const saved = await api(`/api/barcodes?code=${code}`).catch(() => null);
       if (saved) {
-        stopBarcodeScan();
         fillFromSavedBarcode(saved);
         showToast('Product found!', '#22c55e');
+        barcodeProcessing = false;
         return;
       }
 
-      // 2. Try Open Food Facts (5s timeout)
-      const product = await Promise.race([
-        lookupBarcode(code),
-        timeout(5000)
-      ]).catch(() => null);
-
-      stopBarcodeScan();
+      // 2. Try Open Food Facts
+      const product = await lookupBarcode(code);
       if (product) {
         fillFromBarcode(product);
-        showToast('Product found! It will be saved for next time.', '#22c55e');
+        showToast('Product found! Saved for next time.', '#22c55e');
         saveBarcode(code, product).catch(() => {});
+        barcodeProcessing = false;
         return;
       }
 
-      // 3. Not found anywhere — manual entry mode
+      // 3. Not found — manual entry mode
       selectedFood = null;
       document.getElementById('nutr-food-search').value = '';
       document.getElementById('nutr-food-search').placeholder = 'Enter product name from label';
@@ -2546,13 +2537,11 @@
       setMacroFieldsReadonly(false);
       clearNutritionFields();
       document.getElementById('nutr-food-search').focus();
-      showToast(`Not found online. Enter details from the label — it will be saved for next time.`, '#f97316');
+      showToast('Not found. Enter details from the label.', '#f97316');
     } catch (e) {
-      stopBarcodeScan();
-      showToast('Something went wrong. Try again.', '#dc2626');
-    } finally {
-      barcodeProcessing = false;
+      showToast('Lookup failed. Enter details manually.', '#dc2626');
     }
+    barcodeProcessing = false;
   }
 
   function fillFromSavedBarcode(saved) {
