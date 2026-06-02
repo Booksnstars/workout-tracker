@@ -95,3 +95,10 @@ CREATE TABLE IF NOT EXISTS barcodes (
   fat REAL NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS google_tokens (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id),
+  access_token TEXT NOT NULL,
+  refresh_token TEXT NOT NULL,
+  expires_at INTEGER NOT NULL
+);

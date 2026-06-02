@@ -850,6 +850,22 @@
     </div>
   </div>
 
+  <div id="google-health-section" style="display:none;margin-bottom:16px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:#dcfce7;border-radius:10px;padding:14px;text-align:center;">
+        <div id="gh-steps" style="font-size:1.4rem;font-weight:700;color:#16a34a;">—</div>
+        <div style="font-size:0.78rem;color:#6b7280;">Steps</div>
+      </div>
+      <div style="background:#fef9c3;border-radius:10px;padding:14px;text-align:center;">
+        <div id="gh-calories" style="font-size:1.4rem;font-weight:700;color:#ca8a04;">—</div>
+        <div style="font-size:0.78rem;color:#6b7280;">Burned</div>
+      </div>
+    </div>
+  </div>
+  <div id="google-connect-section" style="text-align:center;margin-bottom:16px;">
+    <button class="btn btn-secondary" onclick="connectGoogle()" style="font-size:0.85rem;">Connect Google Health</button>
+  </div>
+
   <div class="meal-log-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <h2 style="margin:0;">Meals logged</h2>
@@ -2365,6 +2381,28 @@
     return all.filter(m => m.date === dateStr);
   }
 
+  function connectGoogle() {
+    window.location.href = '/api/google/connect';
+  }
+
+  async function fetchGoogleHealth(dateStr) {
+    try {
+      const data = await api(`/api/google/health?date=${dateStr}`);
+      if (data.connected) {
+        document.getElementById('google-health-section').style.display = '';
+        document.getElementById('google-connect-section').style.display = 'none';
+        document.getElementById('gh-steps').textContent = (data.steps?.value || 0).toLocaleString();
+        document.getElementById('gh-calories').textContent = (data.calories_burned?.value || 0) + ' kcal';
+      } else {
+        document.getElementById('google-health-section').style.display = 'none';
+        document.getElementById('google-connect-section').style.display = '';
+      }
+    } catch {
+      document.getElementById('google-health-section').style.display = 'none';
+      document.getElementById('google-connect-section').style.display = '';
+    }
+  }
+
   async function renderNutritionPage() {
     const dateStr = offsetDate(nutritionDayOffset);
     const label = document.getElementById('nutrition-date-label');
@@ -2374,6 +2412,7 @@
     else label.textContent = formatDate(dateStr);
     sub.textContent = dateStr;
 
+    fetchGoogleHealth(dateStr);
     const meals = await loadNutrition(dateStr);
 
     const totKcal   = meals.reduce((s, m) => s + (m.kcal || 0), 0);
