@@ -2566,19 +2566,25 @@
   }
 
   async function lookupBarcode(barcode) {
-    const headers = { 'User-Agent': 'GymTracker/1.0 (workout.sardine.dev)' };
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
     try {
-      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,brands,nutriments,serving_size`, { headers });
+      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,brands,nutriments,serving_size`, { signal: controller.signal });
+      clearTimeout(timeout);
       const data = await res.json();
       if (data.status === 1 && data.product && data.product.nutriments) return data.product;
       // Try with leading zero (some scanners strip it)
       if (barcode.length === 12) {
-        const res2 = await fetch(`https://world.openfoodfacts.org/api/v2/product/0${barcode}.json?fields=product_name,brands,nutriments,serving_size`, { headers });
+        const controller2 = new AbortController();
+        const timeout2 = setTimeout(() => controller2.abort(), 5000);
+        const res2 = await fetch(`https://world.openfoodfacts.org/api/v2/product/0${barcode}.json?fields=product_name,brands,nutriments,serving_size`, { signal: controller2.signal });
+        clearTimeout(timeout2);
         const data2 = await res2.json();
         if (data2.status === 1 && data2.product && data2.product.nutriments) return data2.product;
       }
       return null;
     } catch (e) {
+      clearTimeout(timeout);
       return null;
     }
   }
