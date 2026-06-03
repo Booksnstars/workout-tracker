@@ -49,15 +49,18 @@ export async function onRequestGet(context) {
   const debug = url.searchParams.get('debug') === '1';
 
   const [year, month, day] = date.split('-').map(Number);
-  const dateObj = { year, month, day };
+  const startDate = { year, month, day };
+  // End date is exclusive, so next day
+  const nextDay = new Date(year, month - 1, day + 1);
+  const endDate = { year: nextDay.getFullYear(), month: nextDay.getMonth() + 1, day: nextDay.getDate() };
 
   const [steps, calories] = await Promise.all([
-    fetchHealthData(token, 'steps', dateObj),
-    fetchHealthData(token, 'caloriesBurned', dateObj),
+    fetchHealthData(token, 'steps', startDate, endDate),
+    fetchHealthData(token, 'total-calories', startDate, endDate),
   ]);
 
   if (debug) {
-    return Response.json({ connected: true, date, dateObj, steps, calories });
+    return Response.json({ connected: true, date, startDate, endDate, steps, calories });
   }
 
   return Response.json({
@@ -68,7 +71,7 @@ export async function onRequestGet(context) {
   });
 }
 
-async function fetchHealthData(token, dataType, dateObj) {
+async function fetchHealthData(token, dataType, startDate, endDate) {
   try {
     const res = await fetch(
       `https://health.googleapis.com/v4/users/me/dataTypes/${dataType}/dataPoints:dailyRollUp`,
@@ -79,8 +82,10 @@ async function fetchHealthData(token, dataType, dateObj) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          startDate: dateObj,
-          endDate: dateObj,
+          range: {
+            start: { date: startDate },
+            end: { date: endDate },
+          },
         }),
       }
     );
@@ -91,18 +96,23 @@ async function fetchHealthData(token, dataType, dateObj) {
     }
 
     const data = await res.json();
-    const points = data.dataPoints || [];
-    if (points.length === 0) return { value: 0, raw: data };
+    const points = data.rollupDataPoints || data.dataPoints || [];
+    if (points.length === 0) return { value: 0 };
 
-    // Extract value from first data point
+    // Extract value from the first rollup point
     const point = points[0];
-    const values = point.values || point.value || [];
-    if (Array.isArray(values) && values.length > 0) {
-      const v = values[0];
-      return { value: Math.round(v.intVal || v.floatVal || v.integer || v.float || 0) };
+    // The response nests values like: steps.countSum, totalCalories.kcalSum, etc.
+    let total = 0;
+    for (const [key, val] of Object.entries(point)) {
+      if (key === 'civilStartTime' || key === 'civilEndTime') continue;
+      if (typeof val === 'object' && val !== null) {
+        for (const v of Object.values(val)) {
+          const num = parseFloat(v);
+          if (!isNaN(num)) total += num;
+        }
+      }
     }
-    // Try direct fields
-    return { value: Math.round(point.intVal || point.floatVal || 0), raw: point };
+    return { value: Math.round(total) };
   } catch (e) {
     return { value: 0, error: e.message };
   }
