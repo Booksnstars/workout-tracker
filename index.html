@@ -934,12 +934,13 @@
   </div>
 
   <hr class="section-divider" />
-  <h2>Saved Meals</h2>
-  <div id="saved-meals-list"></div>
-  <div id="saved-meals-empty" style="display:none;" class="empty-state">No saved meals yet.</div>
+  <details id="saved-meals-section">
+    <summary style="font-size:1.1rem;font-weight:600;cursor:pointer;color:#1f2937;margin-bottom:12px;">Saved Meals</summary>
+    <div id="saved-meals-list"></div>
+    <div id="saved-meals-empty" style="display:none;" class="empty-state">No saved meals yet.</div>
 
-  <hr class="section-divider" />
-  <h2>Create a new meal</h2>
+    <hr class="section-divider" />
+    <h2 id="meal-builder-heading">Create a new meal</h2>
   <label>Meal name</label>
   <input type="text" id="meal-builder-name" placeholder="e.g. My breakfast" />
   <label style="margin-top:12px;">Items</label>
@@ -951,6 +952,7 @@
   <div class="form-actions">
     <button class="btn btn-primary" onclick="saveMealBuilder()">Save meal</button>
   </div>
+  </details>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -2772,6 +2774,7 @@
   // --- Saved Meals Page ---
   async function renderSavedMealsPage() {
     const saved = await api('/api/saved_meals');
+    _savedMealsCache = saved;
     const list  = document.getElementById('saved-meals-list');
     const empty = document.getElementById('saved-meals-empty');
     if (!saved.length) {
@@ -2797,14 +2800,50 @@
             <div class="saved-meal-name">${escHtml(m.name)}</div>
             <div class="saved-meal-macros">P ${Math.round(m.protein || 0)}g · C ${Math.round(m.carbs || 0)}g · F ${Math.round(m.fat || 0)}g</div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;">
+          <div style="display:flex;align-items:center;gap:6px;">
             <span class="saved-meal-kcal">${m.kcal} kcal</span>
+            <button class="btn btn-secondary btn-small" onclick="editSavedMeal(${m.id})">Edit</button>
             <button class="btn btn-danger btn-small" onclick="deleteSavedMeal(${m.id})">Delete</button>
           </div>
         </div>
         ${itemsHtml ? '<div style="margin-top:6px;border-top:1px solid #252525;padding-top:6px;">' + itemsHtml + '</div>' : ''}
       </div>`;
     }).join('');
+  }
+
+  let _savedMealsCache = [];
+
+  async function editSavedMeal(id) {
+    const meal = _savedMealsCache.find(m => m.id === id);
+    if (!meal) return;
+    // Load meal into the builder
+    document.getElementById('meal-builder-name').value = meal.name;
+    document.getElementById('meal-builder-items').innerHTML = '';
+    if (meal.items) {
+      try {
+        const items = JSON.parse(meal.items);
+        for (const it of items) {
+          addMealBuilderItem();
+          const rows = document.getElementById('meal-builder-items').children;
+          const row = rows[rows.length - 1];
+          const input = row.querySelector('input[type="text"]');
+          const qtyInput = row.querySelector('input[type="number"]');
+          input.value = it.food;
+          qtyInput.value = it.qty;
+          const food = FOOD_DB.find(f => f.name === it.food || (f.alt && f.alt === it.food));
+          if (food) {
+            row._food = food;
+            row.querySelector('.mbr-unit').textContent = it.unit || food.unit;
+          } else {
+            row.querySelector('.mbr-unit').textContent = it.unit || 'g';
+          }
+          row._qty = it.qty;
+        }
+        updateMealBuilderTotals();
+      } catch {}
+    }
+    document.getElementById('meal-builder-heading').textContent = 'Edit meal';
+    document.getElementById('meal-builder-heading').scrollIntoView({ behavior: 'smooth' });
   }
 
   async function deleteSavedMeal(id) {
@@ -2973,6 +3012,7 @@
       document.getElementById('meal-builder-name').value = '';
       document.getElementById('meal-builder-items').innerHTML = '';
       document.getElementById('meal-builder-totals').innerHTML = '';
+      document.getElementById('meal-builder-heading').textContent = 'Create a new meal';
       renderSavedMealsPage();
       populateQuickAdd();
       showToast('Meal saved!');
