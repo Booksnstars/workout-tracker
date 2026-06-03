@@ -46,78 +46,64 @@ export async function onRequestGet(context) {
 
   const url = new URL(context.request.url);
   const date = url.searchParams.get('date') || new Date().toISOString().split('T')[0];
+  const debug = url.searchParams.get('debug') === '1';
 
-  // Calculate start/end of day in millis
-  const startMs = new Date(date + 'T00:00:00').getTime();
-  const endMs = new Date(date + 'T23:59:59.999').getTime();
+  const [year, month, day] = date.split('-').map(Number);
+  const dateObj = { year, month, day };
 
   const [steps, calories] = await Promise.all([
-    fetchFitData(token, 'com.google.step_count.delta', 'derived:com.google.step_count.delta:com.google.android.gms:estimated_steps', startMs, endMs),
-    fetchFitData(token, 'com.google.calories.expended', 'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended', startMs, endMs),
+    fetchHealthData(token, 'steps', dateObj),
+    fetchHealthData(token, 'caloriesBurned', dateObj),
   ]);
+
+  if (debug) {
+    return Response.json({ connected: true, date, dateObj, steps, calories });
+  }
 
   return Response.json({
     connected: true,
     date,
-    steps: steps,
-    calories_burned: calories,
+    steps: { value: steps.value },
+    calories_burned: { value: calories.value },
   });
 }
 
-async function fetchFitData(token, dataTypeName, dataSourceId, startMs, endMs) {
+async function fetchHealthData(token, dataType, dateObj) {
   try {
-    const res = await fetch('https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        aggregateBy: [{ dataTypeName, dataSourceId }],
-        bucketByTime: { durationMillis: endMs - startMs + 1 },
-        startTimeMillis: startMs,
-        endTimeMillis: endMs,
-      }),
-    });
-
-    if (!res.ok) {
-      // Try without dataSourceId (some accounts have different sources)
-      const res2 = await fetch('https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate', {
+    const res = await fetch(
+      `https://health.googleapis.com/v4/users/me/dataTypes/${dataType}/dataPoints:dailyRollUp`,
+      {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          aggregateBy: [{ dataTypeName }],
-          bucketByTime: { durationMillis: endMs - startMs + 1 },
-          startTimeMillis: startMs,
-          endTimeMillis: endMs,
+          startDate: dateObj,
+          endDate: dateObj,
         }),
-      });
-      if (!res2.ok) return { value: 0 };
-      const data2 = await res2.json();
-      return extractValue(data2);
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.text();
+      return { value: 0, error: err };
     }
 
     const data = await res.json();
-    return extractValue(data);
-  } catch (e) {
-    return { value: 0 };
-  }
-}
+    const points = data.dataPoints || [];
+    if (points.length === 0) return { value: 0, raw: data };
 
-function extractValue(data) {
-  let total = 0;
-  const buckets = data.bucket || [];
-  for (const bucket of buckets) {
-    for (const dataset of (bucket.dataset || [])) {
-      for (const point of (dataset.point || [])) {
-        for (const val of (point.value || [])) {
-          total += val.intVal || val.fpVal || 0;
-        }
-      }
+    // Extract value from first data point
+    const point = points[0];
+    const values = point.values || point.value || [];
+    if (Array.isArray(values) && values.length > 0) {
+      const v = values[0];
+      return { value: Math.round(v.intVal || v.floatVal || v.integer || v.float || 0) };
     }
+    // Try direct fields
+    return { value: Math.round(point.intVal || point.floatVal || 0), raw: point };
+  } catch (e) {
+    return { value: 0, error: e.message };
   }
-  return { value: Math.round(total) };
 }
