@@ -2336,7 +2336,7 @@
           setMacroFieldsReadonly(true);
         } else {
           setMacroFieldsReadonly(false);
-          document.getElementById('nutr-unit-select').innerHTML = '<option>manual</option>';
+          document.getElementById('nutr-unit-select').innerHTML = '<option value="g">g</option><option value="ml">ml</option><option value="tbsp">tbsp</option><option value="tsp">tsp</option><option value="cup">cup</option><option value="unit">unit</option>';
           return;
         }
       }
@@ -2344,7 +2344,7 @@
     if (!selectedFood || !qty) {
       if (!selectedFood && document.getElementById('nutr-food-search').value.trim()) {
         setMacroFieldsReadonly(false);
-        document.getElementById('nutr-unit-select').innerHTML = '<option>manual</option>';
+        document.getElementById('nutr-unit-select').innerHTML = '<option value="g">g</option><option value="ml">ml</option><option value="tbsp">tbsp</option><option value="tsp">tsp</option><option value="cup">cup</option><option value="unit">unit</option>';
         return;
       }
       if (!selectedFood) clearNutritionFields();
