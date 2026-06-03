@@ -9,7 +9,7 @@ export async function onRequestGet(context) {
 
   const clientId = context.env.GOOGLE_CLIENT_ID;
   const redirectUri = 'https://workout.sardine.dev/api/google/callback';
-  const scope = 'https://www.googleapis.com/auth/health';
+  const scope = 'https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly';
 
   const params = new URLSearchParams({
     client_id: clientId,
