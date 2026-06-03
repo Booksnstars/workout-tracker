@@ -1,8 +1,11 @@
-import { requireAuth } from '../_auth.js';
+import { requireAuth, parseCookies } from '../_auth.js';
 
 export async function onRequestGet(context) {
   const auth = await requireAuth(context);
   if (auth instanceof Response) return auth;
+
+  const cookies = parseCookies(context.request.headers.get('Cookie'));
+  const sessionToken = cookies['session'];
 
   const clientId = context.env.GOOGLE_CLIENT_ID;
   const redirectUri = 'https://workout.sardine.dev/api/google/callback';
@@ -15,7 +18,7 @@ export async function onRequestGet(context) {
     scope,
     access_type: 'offline',
     prompt: 'consent',
-    state: auth.token,
+    state: sessionToken,
   });
 
   return Response.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`, 302);
