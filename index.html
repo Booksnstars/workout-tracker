@@ -2596,16 +2596,17 @@
   }
 
   function fillFromSavedBarcode(saved) {
-    selectedFood = null;
     lastScannedBarcode = null;
+    // Create a synthetic food entry so quantity changes recalculate macros
+    selectedFood = { name: saved.name, unit: 'g', serving: saved.serving_g, kcal: saved.kcal, protein: saved.protein, carbs: saved.carbs, fat: saved.fat };
     document.getElementById('nutr-food-search').value = saved.name;
     document.getElementById('nutr-qty').value = saved.serving_g;
-    document.getElementById('nutr-unit-select').innerHTML = '<option value="g" selected>g</option>';
+    populateUnitSelect(selectedFood);
     document.getElementById('nutr-kcal').value = saved.kcal;
     document.getElementById('nutr-protein').value = saved.protein;
     document.getElementById('nutr-carbs').value = saved.carbs;
     document.getElementById('nutr-fat').value = saved.fat;
-    setMacroFieldsReadonly(false);
+    setMacroFieldsReadonly(true);
   }
 
   async function saveBarcode(code, product) {
@@ -2655,9 +2656,7 @@
   }
 
   function fillFromBarcode(product) {
-    selectedFood = null;
     const name = [product.product_name, product.brands].filter(Boolean).join(' - ');
-    document.getElementById('nutr-food-search').value = name;
 
     // Parse serving size: e.g. "250 g", "100g", "1 portion (350ml)"
     let servingGrams = 100;
@@ -2673,14 +2672,16 @@
     const carbs = Math.round(((n.carbohydrates_100g || 0) * factor) * 10) / 10;
     const fat = Math.round(((n.fat_100g || 0) * factor) * 10) / 10;
 
+    // Create a synthetic food entry so quantity changes recalculate macros
+    selectedFood = { name, unit: 'g', serving: servingGrams, kcal, protein, carbs, fat };
+    document.getElementById('nutr-food-search').value = name;
     document.getElementById('nutr-qty').value = servingGrams;
-    const unitSel = document.getElementById('nutr-unit-select');
-    unitSel.innerHTML = '<option value="g" selected>g</option>';
+    populateUnitSelect(selectedFood);
     document.getElementById('nutr-kcal').value = kcal;
     document.getElementById('nutr-protein').value = protein;
     document.getElementById('nutr-carbs').value = carbs;
     document.getElementById('nutr-fat').value = fat;
-    setMacroFieldsReadonly(false);
+    setMacroFieldsReadonly(true);
   }
 
   async function logMeal() {
