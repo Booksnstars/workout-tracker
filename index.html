@@ -654,6 +654,18 @@
 
 <!-- HOME PAGE -->
 <div id="page-home" class="page active">
+  <div id="home-health-stats" style="display:none;padding:20px 20px 0;max-width:500px;margin:0 auto;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:#dcfce7;border-radius:12px;padding:16px;text-align:center;">
+        <div id="home-steps" style="font-size:1.6rem;font-weight:700;color:#16a34a;">—</div>
+        <div style="font-size:0.8rem;color:#6b7280;">Steps today</div>
+      </div>
+      <div style="background:#fef9c3;border-radius:12px;padding:16px;text-align:center;">
+        <div id="home-calories" style="font-size:1.6rem;font-weight:700;color:#ca8a04;">—</div>
+        <div style="font-size:0.8rem;color:#6b7280;">Burned today</div>
+      </div>
+    </div>
+  </div>
   <div class="home-grid">
     <button class="home-card home-card-blue" onclick="showPage('log')">
       <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
@@ -850,19 +862,7 @@
     </div>
   </div>
 
-  <div id="google-health-section" style="display:none;margin-bottom:16px;">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div style="background:#dcfce7;border-radius:10px;padding:14px;text-align:center;">
-        <div id="gh-steps" style="font-size:1.4rem;font-weight:700;color:#16a34a;">—</div>
-        <div style="font-size:0.78rem;color:#6b7280;">Steps</div>
-      </div>
-      <div style="background:#fef9c3;border-radius:10px;padding:14px;text-align:center;">
-        <div id="gh-calories" style="font-size:1.4rem;font-weight:700;color:#ca8a04;">—</div>
-        <div style="font-size:0.78rem;color:#6b7280;">Burned</div>
-      </div>
-    </div>
-  </div>
-  <div id="google-connect-section" style="text-align:center;margin-bottom:16px;">
+  <div id="google-connect-section" style="display:none;text-align:center;margin-bottom:16px;">
     <button class="btn btn-secondary" onclick="connectGoogle()" style="font-size:0.85rem;">Connect Google Health</button>
   </div>
 
@@ -1001,6 +1001,7 @@
     initFoodAutocomplete();
     renderRecentClasses('Pilates', 'recent-classes');
     renderRecentClasses('Swimming', 'recent-swims');
+    fetchHomeHealth();
   }
 
   function showAuthTab(tab) {
@@ -1062,12 +1063,25 @@
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-' + name).classList.add('active');
     document.querySelector('header').style.display = name === 'home' ? 'flex' : 'none';
+    if (name === 'home') fetchHomeHealth();
     if (name === 'history') renderHistory();
     if (name === 'stats') renderStats();
     if (name === 'calendar') renderCalendar();
     if (name === 'nutrition') { renderNutritionPage(); renderSavedMealsPage(); }
     if (name === 'saved-meals') renderSavedMealsPage();
     window.scrollTo(0, 0);
+  }
+
+  async function fetchHomeHealth() {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const data = await api(`/api/google/health?date=${today}`);
+      if (data.connected) {
+        document.getElementById('home-health-stats').style.display = '';
+        document.getElementById('home-steps').textContent = (data.steps?.value || 0).toLocaleString();
+        document.getElementById('home-calories').textContent = (data.calories_burned?.value || 0) + ' kcal';
+      }
+    } catch {}
   }
 
   // --- Log Page ---
@@ -2388,19 +2402,10 @@
   async function fetchGoogleHealth(dateStr) {
     try {
       const data = await api(`/api/google/health?date=${dateStr}`);
-      if (data.connected) {
-        document.getElementById('google-health-section').style.display = '';
-        document.getElementById('google-connect-section').style.display = 'none';
-        document.getElementById('gh-steps').textContent = (data.steps?.value || 0).toLocaleString();
-        document.getElementById('gh-calories').textContent = (data.calories_burned?.value || 0) + ' kcal';
-      } else {
-        document.getElementById('google-health-section').style.display = 'none';
+      if (!data.connected) {
         document.getElementById('google-connect-section').style.display = '';
       }
-    } catch {
-      document.getElementById('google-health-section').style.display = 'none';
-      document.getElementById('google-connect-section').style.display = '';
-    }
+    } catch {}
   }
 
   async function renderNutritionPage() {
