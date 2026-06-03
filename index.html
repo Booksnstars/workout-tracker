@@ -2294,7 +2294,7 @@
 
   function populateBarcodeUnits(servingGrams) {
     const sel = document.getElementById('nutr-unit-select');
-    sel.innerHTML = `<option value="portion" selected>portion (${servingGrams}g)</option><option value="g">g</option>`;
+    sel.innerHTML = `<option value="portion" selected>portion (${servingGrams}g)</option><option value="g">g</option><option value="ml">ml</option><option value="tbsp">tbsp</option><option value="tsp">tsp</option><option value="cup">cup</option>`;
     sel.style.display = '';
     document.getElementById('nutr-qty').placeholder = 'e.g. 0.5';
   }
@@ -2321,8 +2321,11 @@
     if (unit === 'portion') return qty * selectedFood.serving;
     const units = getAvailableUnits(selectedFood);
     const match = units.find(u => u.label === unit);
-    if (!match) return 0;
-    return qty * match.grams;
+    if (match) return qty * match.grams;
+    // Fallback for common units not in the food's unit list
+    const fallback = { g: 1, ml: 1, tsp: 5, tbsp: 15, cup: 240 };
+    if (fallback[unit]) return qty * fallback[unit];
+    return 0;
   }
 
   function calcFoodNutrition() {
