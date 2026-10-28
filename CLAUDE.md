@@ -41,3 +41,12 @@ The D1 binding is `env.DB`. Exercises are stored as a JSON string in the `exerci
 **Database:** Two tables — `workouts` (with `exercises` as JSON text) and `classes`. Schema is in `schema.sql`. DB name: `workout-tracker`, ID: `0f486c02-fa7d-4c21-b02d-c5578196a008`.
 
 **Deployed URL:** https://workout.sardine.dev
+
+## Working with Claude Sonnet 5.5
+
+Guidance from Anthropic's Sonnet 5.5 prompting notes, adapted to this repo:
+
+- **Verify before reporting done.** When you change code that can be run, built, or type-checked, run a real check that exercises the change before reporting it done. This repo has no test suite, so the real check is `npx wrangler pages dev . --d1=DB` plus a request to the affected `/api/...` route (e.g. with `curl`), or loading the page for `index.html` changes. A syntax-only check, or a command that failed to start, does not count. If all that is missing is declared dependencies, run `npm install`. If no real check can run, say which one you skipped and why instead of reporting the change as done.
+- **Use tools freely.** Prefer reading the code and querying the local DB (`wrangler d1 execute ... --local`) over answering from memory. Never run write queries or `schema.sql` with `--remote` unless asked.
+- **Effort:** `medium` is the recommended starting point for agentic coding on Sonnet 5.5; use `low` for quick questions and raise it only for hard debugging.
+- **Settled answers:** once something has been answered or decided in a session, don't re-litigate it unless new evidence appears.
