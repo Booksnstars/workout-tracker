@@ -2514,44 +2514,66 @@
   // --- Barcode Scanner ---
   let barcodeScanner = null;
   let barcodeScannerRunning = false;
+  // Start/stop are async; serialize them so a quick re-open never races a pending stop
+  let scannerQueue = Promise.resolve();
+  function queueScanner(fn) {
+    scannerQueue = scannerQueue.catch(() => {}).then(fn);
+    return scannerQueue;
+  }
+
+  function stopScannerNow() {
+    return queueScanner(async () => {
+      if (barcodeScanner && barcodeScannerRunning) {
+        try { await barcodeScanner.stop(); } catch (e) {}
+      }
+      barcodeScannerRunning = false;
+    });
+  }
 
   function startBarcodeScan() {
     const modal = document.getElementById('barcode-modal');
     modal.style.display = 'flex';
     barcodeProcessing = false;
-    document.getElementById('barcode-status').textContent = 'Point your camera at a barcode';
+    document.getElementById('barcode-status').textContent = 'Starting camera...';
 
-    if (barcodeScanner && barcodeScannerRunning) {
-      barcodeScanner.resume();
-      return;
-    }
-
-    if (!barcodeScanner) barcodeScanner = new Html5Qrcode('barcode-reader');
-    barcodeScanner.start(
-      { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 280, height: 150 }, formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E] },
-      onBarcodeDetected,
-      () => {}
-    ).then(() => { barcodeScannerRunning = true; }).catch(err => {
-      showToast('Camera access denied. Check permissions.', '#dc2626');
-      stopBarcodeScan();
+    queueScanner(async () => {
+      // Always restart cleanly instead of resuming a paused/stale stream
+      if (barcodeScanner && barcodeScannerRunning) {
+        try { await barcodeScanner.stop(); } catch (e) {}
+        barcodeScannerRunning = false;
+      }
+      if (modal.style.display === 'none') return; // closed while waiting
+      if (!barcodeScanner) {
+        barcodeScanner = new Html5Qrcode('barcode-reader', {
+          formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E],
+          useBarCodeDetectorIfSupported: true, // native detector is far more reliable for 1D codes
+          verbose: false
+        });
+      }
+      try {
+        await barcodeScanner.start(
+          { facingMode: 'environment' },
+          {
+            fps: 15,
+            // Wide scan area relative to the actual video size, so alignment is forgiving
+            qrbox: (w, h) => { const width = Math.floor(w * 0.9); return { width, height: Math.floor(Math.min(h * 0.6, width * 0.5)) }; },
+            videoConstraints: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 }, advanced: [{ focusMode: 'continuous' }] }
+          },
+          onBarcodeDetected,
+          () => {}
+        );
+        barcodeScannerRunning = true;
+        document.getElementById('barcode-status').textContent = 'Point your camera at a barcode';
+      } catch (err) {
+        modal.style.display = 'none';
+        showToast('Could not start camera. Check permissions.', '#dc2626');
+      }
     });
   }
 
-  function stopBarcodeScan() {
-    const modal = document.getElementById('barcode-modal');
-    if (barcodeScanner && barcodeScannerRunning) {
-      barcodeScanner.pause(true);
-    }
-    modal.style.display = 'none';
-  }
-
   function cancelBarcodeScan() {
-    const modal = document.getElementById('barcode-modal');
-    if (barcodeScanner && barcodeScannerRunning) {
-      barcodeScanner.stop().then(() => { barcodeScannerRunning = false; }).catch(() => {});
-    }
-    modal.style.display = 'none';
+    document.getElementById('barcode-modal').style.display = 'none';
+    stopScannerNow();
   }
 
   let lastScannedBarcode = null;
@@ -2567,8 +2589,7 @@
   async function processBarcode(code) {
     // Close the modal immediately — never leave user stuck
     document.getElementById('barcode-modal').style.display = 'none';
-    if (barcodeScanner) barcodeScanner.stop().catch(() => {});
-    barcodeScannerRunning = false;
+    stopScannerNow();
     lastScannedBarcode = code;
     showToast(`Scanned ${code} — looking up...`, '#6b7280');
 
