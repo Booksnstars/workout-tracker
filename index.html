@@ -110,6 +110,14 @@
     .plan-edit-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
     .plan-empty { text-align: center; color: #6b7280; padding: 40px 10px; }
     .plan-empty p { margin-bottom: 16px; }
+    .plan-section { font-size: 1.15rem; font-weight: 700; color: #6b7280; margin: 8px 4px 8px; }
+    .plan-superset { position: relative; border: 2px solid #3b82f6; border-radius: 16px; padding: 22px 8px 4px; margin: 22px 0 14px; }
+    .plan-superset-tag { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: #3b82f6; color: #fff; font-weight: 700; font-size: 0.95rem; padding: 4px 18px; border-radius: 999px; }
+    .plan-superset .plan-card { box-shadow: none; margin-bottom: 8px; }
+    .plan-superset .plan-card + .plan-card { border-top: 1px solid #e5e7eb; border-radius: 0 0 16px 16px; }
+    .plan-check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 0.9rem; color: #374151; }
+    .plan-check input { width: auto; }
+    .plan-instructions { white-space: pre-wrap; color: #374151; font-size: 0.95rem; line-height: 1.5; }
     .plan-log-btn { width: 100%; padding: 16px; font-size: 1.05rem; border-radius: 14px; margin-top: 4px; }
 
     .page { display: none; padding: 20px; max-width: 700px; margin: 0 auto; }
@@ -1259,6 +1267,8 @@
         <input type="text" value="${escHtml(plan.name)}" oninput="renamePlan(this.value)" />
         <label>Workout name</label>
         <input type="text" value="${escHtml(day.name)}" oninput="renameDay(this.value)" />
+        <label>Instructions (optional)</label>
+        <textarea placeholder="e.g. 3-5 min warm up of choice..." oninput="setDayInstructions(this.value)">${escHtml(day.instructions)}</textarea>
         <div class="plan-edit-actions">
           ${plan.days.length > 1 ? '<button class="btn btn-secondary btn-small" onclick="deleteDay()">Delete workout</button>' : ''}
           <button class="btn btn-danger btn-small" onclick="deletePlan()">Delete plan</button>
@@ -1266,7 +1276,29 @@
       </div>`;
     }
 
-    html += day.exercises.map((e, i) => planEditing ? planCardEdit(e, i, day.exercises.length) : planCardView(e, i)).join('');
+    // Group consecutive exercises flagged "superset" into one block; letters restart per section
+    const blocks = [];
+    day.exercises.forEach((e, i) => {
+      const sec = e.section === 'Warm Up' ? 'Warm Up' : 'Workout';
+      const prev = blocks[blocks.length - 1];
+      if (e.superset && prev && prev.sec === sec) prev.items.push({ e, i });
+      else blocks.push({ sec, items: [{ e, i }] });
+    });
+    let lastSection = null;
+    const counters = {};
+    blocks.forEach(b => {
+      if (b.sec !== lastSection) { html += `<div class="plan-section">${b.sec}</div>`; lastSection = b.sec; }
+      counters[b.sec] = counters[b.sec] || 0;
+      const letter = String.fromCharCode(65 + (counters[b.sec]++ % 26));
+      const cards = b.items.map(({ e, i }, k) => {
+        const label = b.items.length > 1 ? letter + (k + 1) : letter;
+        return planEditing ? planCardEdit(e, i, day.exercises.length, label) : planCardView(e, label);
+      }).join('');
+      html += b.items.length > 1 ? `<div class="plan-superset"><span class="plan-superset-tag">Superset</span>${cards}</div>` : cards;
+    });
+    if (!planEditing && day.instructions) {
+      html += `<div class="plan-card"><div class="plan-ex-name">Instructions</div><div class="plan-instructions">${escHtml(day.instructions)}</div></div>`;
+    }
 
     if (planEditing) {
       html += `<button class="btn btn-secondary" style="width:100%" onclick="addPlanExercise()">+ Add exercise</button>`;
@@ -1278,12 +1310,14 @@
     root.innerHTML = html;
   }
 
-  function planCardView(e, i) {
-    const letter = String.fromCharCode(65 + (i % 26));
+  function planCardView(e, letter) {
     const chips = [];
     if (e.sets) chips.push(`Sets: ${escHtml(e.sets)}`);
     if (e.reps) chips.push(`Reps: ${escHtml(e.reps)}`);
     if (e.rest) chips.push(`Rest: ${fmtRest(e.rest)}`);
+    if (e.effort) chips.push(escHtml(e.effort));
+    if (e.tempo) chips.push(`Tempo: ${escHtml(e.tempo)}`);
+    if (e.time) chips.push(`Time: ${escHtml(e.time)}`);
     return `<div class="plan-card">
       <div class="plan-card-top">
         <div class="plan-card-main">
@@ -1297,8 +1331,7 @@
     </div>`;
   }
 
-  function planCardEdit(e, i, n) {
-    const letter = String.fromCharCode(65 + (i % 26));
+  function planCardEdit(e, i, n, letter) {
     const rest = parseInt(e.rest, 10) || 0;
     const restOpts = [...new Set([...REST_OPTIONS, ...(rest ? [rest] : [])])].sort((a, b) => a - b);
     return `<div class="plan-card plan-card-edit">
@@ -1314,6 +1347,18 @@
           ${restOpts.map(s => `<option value="${s}" ${s === rest ? 'selected' : ''}>${fmtRest(s)}</option>`).join('')}
         </select></div>
       </div>
+      <div class="plan-edit-grid" style="grid-template-columns:1fr 1fr">
+        <div><label>Section</label><select onchange="planField(${i},'section',this.value);drawPlans()">
+          <option value="Workout" ${e.section === 'Warm Up' ? '' : 'selected'}>Workout</option>
+          <option value="Warm Up" ${e.section === 'Warm Up' ? 'selected' : ''}>Warm Up</option>
+        </select></div>
+        <div><label>Intensity (optional)</label><input type="text" placeholder="e.g. RPE: 8" value="${escHtml(e.effort)}" oninput="planField(${i},'effort',this.value)" /></div>
+      </div>
+      <div class="plan-edit-grid" style="grid-template-columns:1fr 1fr">
+        <div><label>Tempo (optional)</label><input type="text" placeholder="e.g. 2/1/2/1" value="${escHtml(e.tempo)}" oninput="planField(${i},'tempo',this.value)" /></div>
+        <div><label>Time (optional)</label><input type="text" placeholder="e.g. 20s" value="${escHtml(e.time)}" oninput="planField(${i},'time',this.value)" /></div>
+      </div>
+      <label class="plan-check"><input type="checkbox" ${e.superset ? 'checked' : ''} ${i === 0 ? 'disabled' : ''} onchange="planField(${i},'superset',this.checked);drawPlans()" /> Superset with the exercise above</label>
       <label>Notes</label>
       <textarea placeholder="Form cues, tips..." oninput="planField(${i},'notes',this.value)">${escHtml(e.notes)}</textarea>
       <label>Video link (optional)</label>
@@ -1358,6 +1403,11 @@
   function renameDay(val) {
     const d = curDay();
     d.name = val.trim() || d.name;
+    schedulePlanSave();
+  }
+
+  function setDayInstructions(val) {
+    curDay().instructions = val;
     schedulePlanSave();
   }
 
@@ -1431,7 +1481,7 @@
   }
 
   function addPlanExercise() {
-    curDay().exercises.push({ name: '', sets: '3', reps: '8-12', rest: 120, notes: '', video: '' });
+    curDay().exercises.push({ name: '', sets: '3', reps: '8-12', rest: 120, notes: '', video: '', section: 'Workout', effort: '', tempo: '', time: '', superset: false });
     schedulePlanSave();
     drawPlans();
   }
@@ -1458,7 +1508,7 @@
     showPage('log');
     clearForm();
     document.getElementById('exercise-list').innerHTML = '';
-    day.exercises.filter(e => e.name.trim()).forEach(e => {
+    day.exercises.filter(e => e.name.trim() && e.section !== 'Warm Up').forEach(e => {
       const firstRep = (String(e.reps).match(/\d+/) || [''])[0];
       addExerciseRow(e.name.trim(), e.sets || '', firstRep, '');
     });
