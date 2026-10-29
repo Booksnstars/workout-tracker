@@ -1037,8 +1037,7 @@
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="7" y1="8" x2="7" y2="16"/><line x1="10" y1="8" x2="10" y2="16"/><line x1="13" y1="8" x2="13" y2="16"/><line x1="17" y1="8" x2="17" y2="16"/></svg>
     </button>
   </div>
-  <div class="nf-sub"><span>Saved meals (tap to add)</span><button class="wk-link" onclick="showPage('saved-meals')">Manage</button></div>
-  <div class="mt-chips" id="saved-chips" style="margin-bottom:0;"></div>
+  <div class="nf-sub" style="margin-top:6px;"><span>Your saved meals show up when you search</span><button class="wk-link" onclick="showPage('saved-meals')">Manage</button></div>
   <div class="nf-sub"><span>Amount</span></div>
   <div style="display:flex;align-items:center;gap:8px;">
     <input type="number" id="nutr-qty" placeholder="e.g. 1" min="0" step="any" inputmode="decimal" oninput="calcFoodNutrition()" onfocus="calcFoodNutrition()" style="flex:1;" />
@@ -3132,8 +3131,14 @@
     let highlighted = -1;
 
     function getMatches(query) {
-      if (!query) return FOOD_DB.slice(0, 20);
-      const q = query.toLowerCase();
+      const q = (query || '').toLowerCase();
+      const savedRank = m => m.name.toLowerCase().startsWith(q) ? 1 : 2;
+      const saved = _savedMealsCache
+        .filter(m => !q || m.name.toLowerCase().includes(q))
+        .sort((a, b) => savedRank(a) - savedRank(b))
+        .slice(0, q ? 8 : 5)
+        .map(m => ({ saved: true, ...m }));
+      if (!query) return [...saved, ...FOOD_DB.slice(0, 20 - saved.length)];
       const matchScore = f => {
         const n = f.name.toLowerCase();
         const a = (f.alt || '').toLowerCase();
@@ -3141,9 +3146,10 @@
         if (n.includes(q) || a.includes(q)) return 2;
         return 0;
       };
-      return FOOD_DB.filter(f => matchScore(f) > 0)
+      const foods = FOOD_DB.filter(f => matchScore(f) > 0)
         .sort((a, b) => matchScore(a) - matchScore(b))
-        .slice(0, 20);
+        .slice(0, 20 - saved.length);
+      return [...saved, ...foods];
     }
 
     function renderDropdown(query) {
@@ -3151,6 +3157,14 @@
       highlighted = -1;
       if (matches.length === 0) { closeDropdown(); return; }
       dropdown.innerHTML = matches.map(f => {
+        if (f.saved) {
+          return `<div class="autocomplete-item" data-saved="${f.id}">
+          <div>${escHtml(f.name)}</div>
+          <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#c2410c;margin-top:1px;">
+            <span>Saved meal</span><span>${f.kcal} kcal</span>
+          </div>
+        </div>`;
+        }
         const unitInfo = f.unit === 'g' ? `${f.kcal} kcal/100g` : `${f.kcal} kcal/${f.unit}`;
         return `<div class="autocomplete-item" data-name="${escHtml(f.name)}">
           <div>${escHtml(f.name)}</div>
@@ -3163,10 +3177,15 @@
       dropdown.classList.add('open');
       dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
         item.addEventListener('click', () => {
-          selectFood(item.dataset.name);
+          pickItem(item);
           closeDropdown();
         });
       });
+    }
+
+    function pickItem(el) {
+      if (el.dataset.saved) selectSavedMeal(parseInt(el.dataset.saved, 10));
+      else selectFood(el.dataset.name);
     }
 
     function closeDropdown() {
@@ -3201,7 +3220,7 @@
         updateHighlight(items);
       } else if (e.key === 'Enter' && highlighted >= 0) {
         e.preventDefault();
-        selectFood(items[highlighted].dataset.name);
+        pickItem(items[highlighted]);
         closeDropdown();
       } else if (e.key === 'Escape') {
         closeDropdown();
@@ -3243,6 +3262,20 @@
     document.getElementById('nutr-food-search').value = selectedFood.name;
     populateUnitSelect(selectedFood);
     document.getElementById('nutr-qty').focus();
+    calcFoodNutrition();
+  }
+
+  // A saved meal behaves like a one-portion food: shows its macros, then you press Add
+  function selectSavedMeal(id) {
+    const m = _savedMealsCache.find(x => x.id === id);
+    if (!m) return;
+    selectedFood = { name: m.name, unit: 'portion', serving: 1, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat };
+    document.getElementById('nutr-food-search').value = m.name;
+    const sel = document.getElementById('nutr-unit-select');
+    sel.innerHTML = '<option value="portion" selected>portion</option>';
+    sel.style.display = '';
+    document.getElementById('nutr-qty').value = 1;
+    if (m.meal_type && m.meal_type !== 'other') setMealType(m.meal_type, true);
     calcFoodNutrition();
   }
 
@@ -3697,32 +3730,7 @@
   }
 
   async function populateQuickAdd() {
-    const saved = await api('/api/saved_meals');
-    _savedMealsCache = saved;
-    const el = document.getElementById('saved-chips');
-    el.innerHTML = saved.length
-      ? saved.map(m => `<button type="button" class="mt-chip" onclick="quickAddMeal(${m.id})">${escHtml(m.name)}<span>${m.kcal}</span></button>`).join('')
-      : '<span class="wk-muted">No saved meals yet. Tick "Also save as a meal" when you add food.</span>';
-  }
-
-  // Tapping a saved meal logs it straight away (under its own meal, or the selected one if it has none)
-  async function quickAddMeal(id) {
-    let meal = _savedMealsCache.find(m => m.id === id);
-    if (!meal) { _savedMealsCache = await api('/api/saved_meals'); meal = _savedMealsCache.find(m => m.id === id); }
-    if (!meal) return;
-    const type = MEAL_TYPES.some(x => x[0] === meal.meal_type) && meal.meal_type !== 'other'
-      ? meal.meal_type : document.getElementById('nutr-type').value;
-    try {
-      await api('/api/nutrition', {
-        method: 'POST',
-        body: JSON.stringify({ id: Date.now(), date: offsetDate(nutritionDayOffset), meal_type: type, name: meal.name, kcal: meal.kcal, protein: meal.protein, carbs: meal.carbs, fat: meal.fat, quantity: '' })
-      });
-      openMeals.add(type);
-      renderNutritionPage();
-      showToast(`${meal.name} added to ${mealLabel(type).toLowerCase()}`);
-    } catch {
-      showToast('Failed to save. Try again.', '#dc2626');
-    }
+    _savedMealsCache = await api('/api/saved_meals');
   }
 
   // --- Saved Meals Page ---
