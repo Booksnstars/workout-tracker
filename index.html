@@ -161,6 +161,43 @@
     .wk-chev { color: #9ca3af; font-size: 1.1rem; }
     .wk-link { background: none; border: none; color: #f97316; font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 0; }
 
+    /* Meal logging: chips, macro pills, collapsible meals table, edit sheet */
+    .mt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .mt-chip { font-size: 0.85rem; padding: 6px 12px; border-radius: 999px; background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; cursor: pointer; }
+    .mt-chip.on { background: #ffedd5; color: #9a3412; border-color: #fdba74; font-weight: 600; }
+    .mt-chip span { color: #9ca3af; font-size: 0.75rem; margin-left: 4px; }
+    .nf-sub { font-size: 0.8rem; color: #6b7280; margin: 14px 0 6px; display: flex; justify-content: space-between; align-items: center; }
+    .nf-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
+    .nf-stat { border-radius: 8px; padding: 6px 4px; text-align: center; font-size: 0.7rem; }
+    .nf-stat input { width: 100%; border: 1px solid transparent; background: transparent; color: inherit; text-align: center; font-weight: 700; font-size: 1rem; padding: 2px 0; }
+    .nf-stat input:focus { box-shadow: none; }
+    .nf-k { background: #ffedd5; color: #9a3412; } .nf-p { background: #dbeafe; color: #1e40af; }
+    .nf-c { background: #fef9c3; color: #854d0e; } .nf-f { background: #f3e8ff; color: #6b21a8; }
+    .nf-add { width: 100%; padding: 13px; font-size: 1rem; border-radius: 10px; margin-top: 12px; }
+    .lm-group { border-top: 1px solid #f3f4f6; }
+    .lm-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; cursor: pointer; font-weight: 600; color: #1f2937; }
+    .lm-head .s { font-size: 0.8rem; color: #6b7280; font-weight: 400; }
+    .lm-head .s.add { color: #c2410c; font-weight: 600; }
+    .lm-chev { display: inline-block; transition: transform 0.15s; margin-right: 8px; color: #9ca3af; }
+    .lm-group.open .lm-chev { transform: rotate(90deg); }
+    .lm-body { display: none; }
+    .lm-group.open .lm-body { display: block; }
+    .lm-cols, .lm-item { display: grid; grid-template-columns: minmax(0, 1fr) 38px 34px 34px 34px 30px; gap: 2px; align-items: center; }
+    .lm-cols div { text-align: center; font-size: 0.7rem; font-weight: 600; padding-bottom: 3px; }
+    .lm-k { border-bottom: 2px solid #fdba74; color: #9a3412; } .lm-p { border-bottom: 2px solid #93c5fd; color: #1e40af; }
+    .lm-c { border-bottom: 2px solid #fde047; color: #854d0e; } .lm-f { border-bottom: 2px solid #d8b4fe; color: #6b21a8; }
+    .lm-item { padding: 8px 0; border-top: 1px solid #f3f4f6; font-size: 0.8rem; }
+    .lm-item .n { font-size: 0.9rem; color: #1f2937; word-break: break-word; }
+    .lm-item .q { font-size: 0.72rem; color: #6b7280; }
+    .lm-item .v { text-align: center; }
+    .lm-edit { background: #f3f4f6; border: none; border-radius: 6px; color: #4b5563; cursor: pointer; font-size: 0.95rem; width: 28px; height: 28px; }
+    .lm-add { padding: 10px 0 12px; font-size: 0.9rem; color: #c2410c; font-weight: 600; cursor: pointer; border-top: 1px solid #f3f4f6; }
+    .me-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 900; align-items: flex-end; justify-content: center; }
+    .me-sheet { background: #fff; width: 100%; max-width: 500px; max-height: 92vh; overflow-y: auto; border-radius: 16px 16px 0 0; padding: 16px 16px 24px; }
+    .me-scale { display: flex; gap: 6px; }
+    .me-scale button { flex: 1; padding: 8px 0; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; font-weight: 600; color: #374151; }
+    .me-scale button.on { background: #ffedd5; border-color: #fdba74; color: #9a3412; }
+
     .page { display: none; padding: 20px; max-width: 700px; margin: 0 auto; }
     .page.active { display: block; }
 
@@ -980,16 +1017,10 @@
   </div>
 
   <hr class="section-divider" />
-  <h2>Quick-add from saved meals</h2>
-  <div style="display:flex;gap:8px;margin-bottom:8px;">
-    <select id="quick-add-select" style="flex:1;"><option value="">— choose a saved meal —</option></select>
-    <button class="btn btn-primary" onclick="quickAddMeal()" style="white-space:nowrap;">Add</button>
-  </div>
-
-  <hr class="section-divider" />
+  <div id="add-food-card">
   <h2>Add food</h2>
-  <label>Meal type</label>
-  <select id="nutr-type">
+  <div class="mt-chips" id="meal-type-chips"></div>
+  <select id="nutr-type" style="display:none;">
     <option value="breakfast">Breakfast</option>
     <option value="snack-am">Snack AM</option>
     <option value="lunch">Lunch</option>
@@ -997,56 +1028,42 @@
     <option value="dinner" selected>Dinner</option>
     <option value="other">Other</option>
   </select>
-  <label>Food</label>
   <div class="autocomplete-wrap" style="display:flex;gap:8px;align-items:center;">
     <div style="flex:1;position:relative;">
       <input type="text" id="nutr-food-search" placeholder="Search food (e.g. chicken breast, rice, banana)" autocomplete="off" />
       <div class="autocomplete-dropdown" id="food-dropdown"></div>
     </div>
-    <button class="btn" onclick="startBarcodeScan()" style="flex:0 0 auto;padding:8px 12px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;" title="Scan barcode">
+    <button class="btn" onclick="startBarcodeScan()" style="flex:0 0 auto;padding:8px 12px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;" title="Scan barcode" aria-label="Scan barcode">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="7" y1="8" x2="7" y2="16"/><line x1="10" y1="8" x2="10" y2="16"/><line x1="13" y1="8" x2="13" y2="16"/><line x1="17" y1="8" x2="17" y2="16"/></svg>
     </button>
   </div>
-  <label>Quantity</label>
+  <div class="nf-sub"><span>Saved meals (tap to add)</span><button class="wk-link" onclick="showPage('saved-meals')">Manage</button></div>
+  <div class="mt-chips" id="saved-chips" style="margin-bottom:0;"></div>
+  <div class="nf-sub"><span>Amount</span></div>
   <div style="display:flex;align-items:center;gap:8px;">
     <input type="number" id="nutr-qty" placeholder="e.g. 1" min="0" step="any" inputmode="decimal" oninput="calcFoodNutrition()" onfocus="calcFoodNutrition()" style="flex:1;" />
     <select id="nutr-unit-select" onchange="onUnitChange()" style="width:auto;min-width:80px;flex:0 0 auto;"></select>
   </div>
-  <div class="macro-grid" style="margin-top:12px;">
-    <div>
-      <label style="margin-top:0;color:#f97316;">Calories</label>
-      <input type="number" id="nutr-kcal" placeholder="—" min="0" inputmode="numeric" readonly style="color:#f97316;font-weight:600;" />
-    </div>
-    <div>
-      <label style="margin-top:0;color:#60a5fa;">Protein (g)</label>
-      <input type="number" id="nutr-protein" placeholder="—" min="0" inputmode="decimal" readonly style="color:#60a5fa;" />
-    </div>
-    <div>
-      <label style="margin-top:0;color:#facc15;">Carbs (g)</label>
-      <input type="number" id="nutr-carbs" placeholder="—" min="0" inputmode="decimal" readonly style="color:#facc15;" />
-    </div>
+  <div class="nf-stats">
+    <div class="nf-stat nf-k"><input type="number" id="nutr-kcal" placeholder="—" min="0" inputmode="numeric" readonly />kcal</div>
+    <div class="nf-stat nf-p"><input type="number" id="nutr-protein" placeholder="—" min="0" inputmode="decimal" readonly />protein g</div>
+    <div class="nf-stat nf-c"><input type="number" id="nutr-carbs" placeholder="—" min="0" inputmode="decimal" readonly />carbs g</div>
+    <div class="nf-stat nf-f"><input type="number" id="nutr-fat" placeholder="—" min="0" inputmode="decimal" readonly />fat g</div>
   </div>
-  <div class="macro-grid" style="margin-top:8px;">
-    <div>
-      <label style="margin-top:0;color:#a78bfa;">Fat (g)</label>
-      <input type="number" id="nutr-fat" placeholder="—" min="0" inputmode="decimal" readonly style="color:#a78bfa;" />
-    </div>
-    <div></div>
-    <div></div>
+  <div style="margin-top:8px;"><button class="wk-link" id="nutr-edit-values" onclick="enableManualMacros()">Edit values</button></div>
+  <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:0.9rem;color:#374151;"><input type="checkbox" id="nutr-save-meal" style="width:auto;" />Also save as a meal</label>
+  <button class="btn btn-primary nf-add" id="nutr-add-btn" onclick="logMeal()">Add to dinner</button>
   </div>
-  <div class="form-actions">
-    <button class="btn btn-primary" onclick="logMeal()">Log food</button>
-    <button class="btn btn-secondary" onclick="logAndSaveMeal()">Log + Save</button>
-  </div>
+</div>
+
+<!-- SAVED MEALS PAGE -->
+<div id="page-saved-meals" class="page">
+  <div class="page-header"><button class="back-btn" onclick="showPage('nutrition')">←</button><h2>Saved meals</h2></div>
+  <div id="saved-meals-list"></div>
+  <div id="saved-meals-empty" style="display:none;" class="empty-state">No saved meals yet.</div>
 
   <hr class="section-divider" />
-  <details id="saved-meals-section">
-    <summary style="font-size:1.1rem;font-weight:600;cursor:pointer;color:#1f2937;margin-bottom:12px;">Saved Meals</summary>
-    <div id="saved-meals-list"></div>
-    <div id="saved-meals-empty" style="display:none;" class="empty-state">No saved meals yet.</div>
-
-    <hr class="section-divider" />
-    <h2 id="meal-builder-heading">Create a new meal</h2>
+  <h2 id="meal-builder-heading">Create a new meal</h2>
   <label>Meal name</label>
   <input type="text" id="meal-builder-name" placeholder="e.g. My breakfast" />
   <label style="margin-top:12px;">Items</label>
@@ -1058,7 +1075,37 @@
   <div class="form-actions">
     <button class="btn btn-primary" onclick="saveMealBuilder()">Save meal</button>
   </div>
-  </details>
+</div>
+
+<!-- EDIT LOGGED MEAL SHEET -->
+<div id="meal-edit-modal" class="me-overlay" onclick="if(event.target===this)closeMealEdit()">
+  <div class="me-sheet">
+    <h2 style="margin-bottom:4px;">Edit meal</h2>
+    <label>Food</label>
+    <input type="text" id="me-name" />
+    <label>Meal</label>
+    <div class="mt-chips" id="me-types" style="margin-bottom:0;"></div>
+    <label>Amount (optional)</label>
+    <input type="text" id="me-qty" placeholder="e.g. 1 cup" />
+    <label>Portion</label>
+    <div class="me-scale" id="me-scale">
+      <button onclick="scaleMealEdit(0.5)" data-f="0.5">&frac12;</button>
+      <button onclick="scaleMealEdit(1)" data-f="1">1&times;</button>
+      <button onclick="scaleMealEdit(1.5)" data-f="1.5">1&frac12;</button>
+      <button onclick="scaleMealEdit(2)" data-f="2">2&times;</button>
+    </div>
+    <div class="nf-stats">
+      <div class="nf-stat nf-k"><input type="number" id="me-kcal" min="0" inputmode="numeric" />kcal</div>
+      <div class="nf-stat nf-p"><input type="number" id="me-protein" min="0" step="any" inputmode="decimal" />protein g</div>
+      <div class="nf-stat nf-c"><input type="number" id="me-carbs" min="0" step="any" inputmode="decimal" />carbs g</div>
+      <div class="nf-stat nf-f"><input type="number" id="me-fat" min="0" step="any" inputmode="decimal" />fat g</div>
+    </div>
+    <button class="btn btn-primary nf-add" onclick="saveMealEdit()">Save changes</button>
+    <div style="display:flex;justify-content:space-between;margin-top:14px;">
+      <button class="wk-link" style="color:#6b7280;" onclick="closeMealEdit()">Cancel</button>
+      <button class="wk-link" style="color:#dc2626;" onclick="deleteMealFromEdit()">Delete meal</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1742,6 +1789,144 @@
     });
     html += '</div>';
     root.innerHTML = html;
+  }
+
+  // --- Meal logging: meal types, collapsible meals table, edit sheet ---
+  const MEAL_TYPES = [['breakfast', 'Breakfast'], ['snack-am', 'Snack AM'], ['lunch', 'Lunch'], ['snack-pm', 'Snack PM'], ['dinner', 'Dinner'], ['other', 'Other']];
+  const mealLabel = t => (MEAL_TYPES.find(x => x[0] === t) || MEAL_TYPES[5])[1];
+  let mealTypeTouched = false;
+  const openMeals = new Set();
+  let _loggedMeals = [];
+
+  function defaultMealType() {
+    const h = new Date().getHours();
+    return h < 10 ? 'breakfast' : h < 12 ? 'snack-am' : h < 15 ? 'lunch' : h < 18 ? 'snack-pm' : 'dinner';
+  }
+
+  function setMealType(t, touched) {
+    if (touched) mealTypeTouched = true;
+    document.getElementById('nutr-type').value = t;
+    document.getElementById('meal-type-chips').innerHTML = MEAL_TYPES.map(([k, l]) =>
+      `<button type="button" class="mt-chip${k === t ? ' on' : ''}" onclick="setMealType('${k}', true)">${l}</button>`).join('');
+    document.getElementById('nutr-add-btn').textContent = `Add to ${mealLabel(t).toLowerCase()}`;
+  }
+
+  function enableManualMacros() {
+    setMacroFieldsReadonly(false);
+    document.getElementById('nutr-kcal').focus();
+  }
+
+  function addFoodTo(t) {
+    setMealType(t, true);
+    const search = document.getElementById('nutr-food-search');
+    document.getElementById('add-food-card').scrollIntoView({ behavior: 'smooth' });
+    search.focus();
+  }
+
+  function toggleMealGroup(t) {
+    if (openMeals.has(t)) openMeals.delete(t); else openMeals.add(t);
+    document.getElementById('lm-' + t).classList.toggle('open', openMeals.has(t));
+  }
+
+  const r1 = n => Math.round((n || 0) * 10) / 10;
+
+  function renderMealGroups(meals) {
+    const known = new Set(MEAL_TYPES.map(x => x[0]));
+    const norm = m => known.has(m.meal_type) ? m.meal_type : 'other';
+    return MEAL_TYPES.map(([t, label]) => {
+      const items = meals.filter(m => norm(m) === t);
+      if (!items.length && t === 'other') return '';
+      if (!items.length) {
+        return `<div class="lm-group"><div class="lm-head" onclick="addFoodTo('${t}')"><span><span class="lm-chev" style="visibility:hidden">›</span>${label}</span><span class="s add">+ Add food</span></div></div>`;
+      }
+      const k = items.reduce((s, m) => s + (m.kcal || 0), 0);
+      const p = items.reduce((s, m) => s + (m.protein || 0), 0);
+      const rows = items.map(m => `
+        <div class="lm-item">
+          <div><div class="n">${escHtml(m.name)}</div>${m.quantity ? `<div class="q">${escHtml(m.quantity)}</div>` : ''}</div>
+          <div class="v">${m.kcal || 0}</div><div class="v">${r1(m.protein)}</div><div class="v">${r1(m.carbs)}</div><div class="v">${r1(m.fat)}</div>
+          <button class="lm-edit" onclick="openMealEdit(${m.id})" aria-label="Edit ${escHtml(m.name)}" title="Edit">&#9998;</button>
+        </div>`).join('');
+      return `<div class="lm-group${openMeals.has(t) ? ' open' : ''}" id="lm-${t}">
+        <div class="lm-head" onclick="toggleMealGroup('${t}')"><span><span class="lm-chev">›</span>${label}</span><span class="s">${k} kcal · ${Math.round(p)} g P</span></div>
+        <div class="lm-body">
+          <div class="lm-cols"><div></div><div class="lm-k">kcal</div><div class="lm-p">P</div><div class="lm-c">C</div><div class="lm-f">F</div><div></div></div>
+          ${rows}
+          <div class="lm-add" onclick="addFoodTo('${t}')">+ Add food</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  let editingMeal = null;
+
+  function openMealEdit(id) {
+    const m = _loggedMeals.find(x => x.id === id);
+    if (!m) return;
+    const type = MEAL_TYPES.some(x => x[0] === m.meal_type) ? m.meal_type : 'other';
+    editingMeal = { id, type, orig: { kcal: m.kcal || 0, protein: m.protein || 0, carbs: m.carbs || 0, fat: m.fat || 0, quantity: m.quantity || '' } };
+    document.getElementById('me-name').value = m.name;
+    document.getElementById('me-qty').value = m.quantity || '';
+    document.getElementById('me-kcal').value = m.kcal || 0;
+    document.getElementById('me-protein').value = r1(m.protein);
+    document.getElementById('me-carbs').value = r1(m.carbs);
+    document.getElementById('me-fat').value = r1(m.fat);
+    document.querySelectorAll('#me-scale button').forEach(b => b.classList.toggle('on', b.dataset.f === '1'));
+    renderEditTypes();
+    document.getElementById('meal-edit-modal').style.display = 'flex';
+  }
+
+  function renderEditTypes() {
+    document.getElementById('me-types').innerHTML = MEAL_TYPES.map(([k, l]) =>
+      `<button type="button" class="mt-chip${k === editingMeal.type ? ' on' : ''}" onclick="setEditMealType('${k}')">${l}</button>`).join('');
+  }
+
+  function setEditMealType(t) { editingMeal.type = t; renderEditTypes(); }
+
+  function closeMealEdit() {
+    document.getElementById('meal-edit-modal').style.display = 'none';
+    editingMeal = null;
+  }
+
+  // Scale from the values the meal had when the sheet opened, so 1x always resets
+  function scaleMealEdit(f) {
+    const o = editingMeal.orig;
+    document.getElementById('me-kcal').value = Math.round(o.kcal * f);
+    document.getElementById('me-protein').value = r1(o.protein * f);
+    document.getElementById('me-carbs').value = r1(o.carbs * f);
+    document.getElementById('me-fat').value = r1(o.fat * f);
+    document.getElementById('me-qty').value = o.quantity.replace(/^\s*(\d+(?:[.,]\d+)?)/, (_, n) => String(Math.round(parseFloat(n.replace(',', '.')) * f * 100) / 100));
+    document.querySelectorAll('#me-scale button').forEach(b => b.classList.toggle('on', parseFloat(b.dataset.f) === f));
+  }
+
+  async function saveMealEdit() {
+    const name = document.getElementById('me-name').value.trim();
+    const kcal = parseInt(document.getElementById('me-kcal').value, 10);
+    const protein = parseFloat(document.getElementById('me-protein').value);
+    const carbs = parseFloat(document.getElementById('me-carbs').value);
+    const fat = parseFloat(document.getElementById('me-fat').value);
+    if (!name) { showToast('Enter a food name.', '#dc2626'); return; }
+    if ([kcal, protein, carbs, fat].some(n => !Number.isFinite(n) || n < 0)) { showToast('Check the calories and macros.', '#dc2626'); return; }
+    try {
+      await api(`/api/nutrition/${editingMeal.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name, meal_type: editingMeal.type, kcal, protein, carbs, fat, quantity: document.getElementById('me-qty').value.trim() })
+      });
+    } catch { showToast('Failed to save. Try again.', '#dc2626'); return; }
+    openMeals.add(editingMeal.type);
+    closeMealEdit();
+    showToast('Meal updated');
+    renderNutritionPage();
+  }
+
+  async function deleteMealFromEdit() {
+    if (!confirm('Delete this meal?')) return;
+    try {
+      await api(`/api/nutrition/${editingMeal.id}`, { method: 'DELETE' });
+    } catch { showToast('Failed to delete. Try again.', '#dc2626'); return; }
+    closeMealEdit();
+    showToast('Deleted.', '#dc2626');
+    renderNutritionPage();
   }
 
   // --- History Page ---
@@ -3142,10 +3327,13 @@
 
   function setMacroFieldsReadonly(readonly) {
     ['nutr-kcal', 'nutr-protein', 'nutr-carbs', 'nutr-fat'].forEach(id => {
-      document.getElementById(id).readOnly = readonly;
-      document.getElementById(id).style.opacity = readonly ? '1' : '0.9';
-      document.getElementById(id).style.borderColor = readonly ? '#e5e7eb' : '#f97316';
+      const el = document.getElementById(id);
+      el.readOnly = readonly;
+      el.style.borderColor = readonly ? 'transparent' : '#f97316';
+      el.style.background = readonly ? 'transparent' : '#fff';
     });
+    const link = document.getElementById('nutr-edit-values');
+    if (link) link.style.display = readonly ? '' : 'none';
   }
 
   function clearNutritionFields() {
@@ -3226,39 +3414,11 @@
     document.getElementById('bar-carbs').style.width    = Math.min(totCarbs / goals.carbs   * 100, 100) + '%';
     document.getElementById('bar-fat').style.width      = Math.min(totFat   / goals.fat     * 100, 100) + '%';
 
-    const typeLabel = {
-      breakfast: 'Breakfast', 'snack-am': 'Snack AM', lunch: 'Lunch',
-      'snack-pm': 'Snack PM', dinner: 'Dinner', other: 'Other'
-    };
-    const listEl = document.getElementById('meal-log-list');
-    if (!meals.length) {
-      listEl.innerHTML = '<div style="color:#555;font-size:0.85rem;">No meals logged yet.</div>';
-    } else {
-      listEl.innerHTML = meals.map(m => `
-        <div class="meal-log-item">
-          <div style="flex:1;">
-            <div class="meal-log-name">${escHtml(m.name)}<span class="meal-type-tag">${typeLabel[m.meal_type] || m.meal_type}</span></div>
-            <div class="meal-log-macros">P ${m.protein || 0}g · C ${m.carbs || 0}g · F ${m.fat || 0}g</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span class="meal-log-kcal">${m.kcal} kcal</span>
-            <button class="btn btn-danger btn-small" onclick="deleteMeal(${m.id})">✕</button>
-          </div>
-        </div>`).join('');
-    }
+    _loggedMeals = meals;
+    document.getElementById('meal-log-list').innerHTML = renderMealGroups(meals);
+    if (!mealTypeTouched) setMealType(defaultMealType());
 
     populateQuickAdd();
-  }
-
-  async function deleteMeal(id) {
-    if (!confirm('Delete this meal?')) return;
-    try {
-      await api(`/api/nutrition/${id}`, { method: 'DELETE' });
-      renderNutritionPage();
-      showToast('Deleted.', '#dc2626');
-    } catch {
-      showToast('Failed to delete. Try again.', '#dc2626');
-    }
   }
 
   function getMealFormData() {
@@ -3487,17 +3647,25 @@
     setMacroFieldsReadonly(true);
   }
 
+  function mealQuantityText() {
+    const qty = document.getElementById('nutr-qty').value;
+    const unit = document.getElementById('nutr-unit-select').value;
+    return qty && unit ? `${qty} ${unit}` : '';
+  }
+
   async function logMeal() {
     const d = getMealFormData();
-    if (!d.name) { showToast('Select a food.', '#dc2626'); return; }
-    if (!d.kcal) { showToast('Enter the weight in grams.', '#dc2626'); return; }
+    if (!d.name) { showToast('Pick a food, or type a name and tap Edit values.', '#dc2626'); return; }
+    if (!d.kcal) { showToast('Enter an amount, or tap Edit values to type the calories.', '#dc2626'); return; }
+    d.quantity = mealQuantityText();
     try {
       await api('/api/nutrition', {
         method: 'POST',
         body: JSON.stringify({ ...d, date: offsetDate(nutritionDayOffset) })
       });
+      let msg = 'Meal logged!';
       // Save barcode if this was a manual entry from a scan
-      if (lastScannedBarcode && d.name && d.kcal) {
+      if (lastScannedBarcode) {
         await api('/api/barcodes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -3508,29 +3676,21 @@
           })
         });
         lastScannedBarcode = null;
-        showToast('Meal logged & barcode saved!');
-      } else {
-        showToast('Meal logged!');
+        msg = 'Meal logged & barcode saved!';
       }
+      const saveBox = document.getElementById('nutr-save-meal');
+      if (saveBox.checked) {
+        await api('/api/saved_meals', {
+          method: 'POST',
+          body: JSON.stringify({ id: Date.now() + 1, name: d.name, meal_type: d.meal_type, kcal: d.kcal, protein: d.protein, carbs: d.carbs, fat: d.fat })
+        });
+        msg += ' Saved as a meal.';
+        saveBox.checked = false;
+      }
+      openMeals.add(d.meal_type);
+      showToast(msg);
       clearMealForm();
       renderNutritionPage();
-    } catch {
-      showToast('Failed to save. Try again.', '#dc2626');
-    }
-  }
-
-  async function logAndSaveMeal() {
-    const d = getMealFormData();
-    if (!d.name) { showToast('Enter a meal name.', '#dc2626'); return; }
-    if (!d.kcal) { showToast('Enter calories.', '#dc2626'); return; }
-    try {
-      await Promise.all([
-        api('/api/nutrition', { method: 'POST', body: JSON.stringify({ ...d, date: offsetDate(nutritionDayOffset) }) }),
-        api('/api/saved_meals', { method: 'POST', body: JSON.stringify(d) })
-      ]);
-      clearMealForm();
-      renderNutritionPage();
-      showToast('Logged & saved! ⭐');
     } catch {
       showToast('Failed to save. Try again.', '#dc2626');
     }
@@ -3538,24 +3698,28 @@
 
   async function populateQuickAdd() {
     const saved = await api('/api/saved_meals');
-    const sel = document.getElementById('quick-add-select');
-    sel.innerHTML = '<option value="">— choose a saved meal —</option>' +
-      saved.map(m => `<option value="${m.id}">${escHtml(m.name)} (${m.kcal} kcal)</option>`).join('');
+    _savedMealsCache = saved;
+    const el = document.getElementById('saved-chips');
+    el.innerHTML = saved.length
+      ? saved.map(m => `<button type="button" class="mt-chip" onclick="quickAddMeal(${m.id})">${escHtml(m.name)}<span>${m.kcal}</span></button>`).join('')
+      : '<span class="wk-muted">No saved meals yet. Tick "Also save as a meal" when you add food.</span>';
   }
 
-  async function quickAddMeal() {
-    const id = document.getElementById('quick-add-select').value;
-    if (!id) { showToast('Select a meal first.', '#dc2626'); return; }
-    const saved = await api('/api/saved_meals');
-    const meal = saved.find(m => String(m.id) === id);
+  // Tapping a saved meal logs it straight away (under its own meal, or the selected one if it has none)
+  async function quickAddMeal(id) {
+    let meal = _savedMealsCache.find(m => m.id === id);
+    if (!meal) { _savedMealsCache = await api('/api/saved_meals'); meal = _savedMealsCache.find(m => m.id === id); }
     if (!meal) return;
+    const type = MEAL_TYPES.some(x => x[0] === meal.meal_type) && meal.meal_type !== 'other'
+      ? meal.meal_type : document.getElementById('nutr-type').value;
     try {
       await api('/api/nutrition', {
         method: 'POST',
-        body: JSON.stringify({ ...meal, id: Date.now(), date: offsetDate(nutritionDayOffset) })
+        body: JSON.stringify({ id: Date.now(), date: offsetDate(nutritionDayOffset), meal_type: type, name: meal.name, kcal: meal.kcal, protein: meal.protein, carbs: meal.carbs, fat: meal.fat, quantity: '' })
       });
+      openMeals.add(type);
       renderNutritionPage();
-      showToast(meal.name + ' logged!');
+      showToast(`${meal.name} added to ${mealLabel(type).toLowerCase()}`);
     } catch {
       showToast('Failed to save. Try again.', '#dc2626');
     }

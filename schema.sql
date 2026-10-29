@@ -118,3 +118,6 @@ CREATE TABLE IF NOT EXISTS user_goals (
   steps INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
+
+-- Run once to store the amount eaten, e.g. "1 cup" (will error if already applied, that's fine)
+ALTER TABLE nutrition ADD COLUMN quantity TEXT;

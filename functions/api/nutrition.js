@@ -12,9 +12,9 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   const auth = await requireAuth(context);
   if (auth instanceof Response) return auth;
-  const { id, date, meal_type, name, kcal, protein, carbs, fat } = await context.request.json();
+  const { id, date, meal_type, name, kcal, protein, carbs, fat, quantity } = await context.request.json();
   await context.env.DB.prepare(
-    'INSERT INTO nutrition (id, user_id, date, meal_type, name, kcal, protein, carbs, fat, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).bind(id, auth.user_id, date, meal_type || 'other', name, kcal || 0, protein || 0, carbs || 0, fat || 0, Date.now()).run();
+    'INSERT INTO nutrition (id, user_id, date, meal_type, name, kcal, protein, carbs, fat, quantity, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).bind(id, auth.user_id, date, meal_type || 'other', name, kcal || 0, protein || 0, carbs || 0, fat || 0, quantity || null, Date.now()).run();
   return Response.json({ ok: true });
 }
