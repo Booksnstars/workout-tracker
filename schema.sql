@@ -102,3 +102,11 @@ CREATE TABLE IF NOT EXISTS google_tokens (
   refresh_token TEXT NOT NULL,
   expires_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS workout_plans (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  name TEXT NOT NULL,
+  days TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);

@@ -80,6 +80,38 @@
     .home-card-purple { background: #f3e8ff; }
     .home-card-rose { background: #ffe4e6; }
 
+    /* Workout plans */
+    .home-card-indigo { background: #e0e7ff; }
+    .plan-toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+    .plan-toolbar select { font-size: 1.05rem; font-weight: 700; flex: 1; }
+    .plan-icon-btn { flex: 0 0 auto; width: 42px; height: 42px; border: none; border-radius: 10px; background: #e0e7ff; color: #4f46e5; font-size: 1.4rem; font-weight: 700; cursor: pointer; }
+    .plan-days { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px; }
+    .plan-day { flex: 0 0 auto; padding: 8px 16px; border: 1px solid #e5e7eb; border-radius: 999px; background: #fff; color: #374151; font-size: 0.9rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .plan-day.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+    .plan-day-add { border-style: dashed; color: #6b7280; }
+    .plan-actions { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+    .plan-card { background: #fff; border-radius: 16px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .plan-card-top { display: flex; align-items: flex-start; gap: 12px; }
+    .plan-card-main { flex: 1; min-width: 0; }
+    .plan-ex-name { font-size: 1.05rem; font-weight: 700; color: #1f2937; margin-bottom: 8px; }
+    .plan-letter { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 8px; background: #3b82f6; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .plan-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .plan-chip { background: #dbeafe; color: #1e3a5f; border-radius: 999px; padding: 6px 12px; font-size: 0.9rem; }
+    .plan-notes { margin-top: 12px; font-size: 0.9rem; color: #374151; display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+    .plan-notes-text { flex: 1; white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+    .plan-notes.open .plan-notes-text { display: block; }
+    .plan-notes .chev { color: #6b7280; transition: transform 0.15s; }
+    .plan-notes.open .chev { transform: rotate(180deg); }
+    .plan-video { display: inline-block; margin-top: 10px; font-size: 0.85rem; color: #3b82f6; text-decoration: none; font-weight: 600; }
+    .plan-card-edit .plan-card-top input { flex: 1; font-weight: 600; }
+    .plan-edit-grid { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 8px; margin-top: 4px; }
+    .plan-edit-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .plan-edit-actions .btn { flex: 1; }
+    .plan-edit-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+    .plan-empty { text-align: center; color: #6b7280; padding: 40px 10px; }
+    .plan-empty p { margin-bottom: 16px; }
+    .plan-log-btn { width: 100%; padding: 16px; font-size: 1.05rem; border-radius: 14px; margin-top: 4px; }
+
     .page { display: none; padding: 20px; max-width: 700px; margin: 0 auto; }
     .page.active { display: block; }
 
@@ -683,9 +715,13 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       <span>Calendar</span>
     </button>
-    <button class="home-card home-card-rose" onclick="showPage('nutrition')" style="grid-column: 1 / -1;">
+    <button class="home-card home-card-rose" onclick="showPage('nutrition')">
       <svg viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
       <span>Nutrition</span>
+    </button>
+    <button class="home-card home-card-indigo" onclick="showPage('plans')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
+      <span>Plans</span>
     </button>
   </div>
 </div>
@@ -744,6 +780,13 @@
     <button class="btn btn-primary" onclick="saveSwim()" style="margin-bottom:0;">Save</button>
   </div>
   <div class="recent-classes" id="recent-swims"></div>
+</div>
+
+<!-- PLANS PAGE -->
+<div id="page-plans" class="page">
+  <div class="page-header"><button class="back-btn" onclick="showPage('home')">←</button><h2>Workout Plans</h2></div>
+  <datalist id="plan-ex-names"></datalist>
+  <div id="plans-root"></div>
 </div>
 
 <!-- HISTORY PAGE -->
@@ -1067,6 +1110,7 @@
     document.querySelector('header').style.display = name === 'home' ? 'flex' : 'none';
     if (name === 'home') fetchHomeHealth();
     if (name === 'history') renderHistory();
+    if (name === 'plans') { planEditing = false; renderPlansPage(); }
     if (name === 'stats') renderStats();
     if (name === 'calendar') renderCalendar();
     if (name === 'nutrition') { renderNutritionPage(); renderSavedMealsPage(); }
@@ -1149,6 +1193,276 @@
     } catch {
       showToast('Failed to save. Try again.', '#dc2626');
     }
+  }
+
+  // --- Workout Plans ---
+  let plans = [];
+  let activePlanId = null;
+  let activeDayIdx = 0;
+  let planEditing = false;
+  let planSaveTimer = null;
+  const REST_OPTIONS = [30, 45, 60, 90, 120, 150, 180, 240, 300];
+
+  function fmtRest(s) {
+    s = parseInt(s, 10);
+    if (!s) return '';
+    const m = Math.floor(s / 60), r = s % 60;
+    return m ? (r ? `${m}m ${r}s` : `${m}m`) : `${r}s`;
+  }
+
+  function curPlan() { return plans.find(p => p.id === activePlanId) || null; }
+  function curDay() {
+    const p = curPlan();
+    return p ? (p.days[activeDayIdx] || p.days[0] || null) : null;
+  }
+
+  async function renderPlansPage() {
+    document.getElementById('plan-ex-names').innerHTML =
+      (typeof exerciseNames !== 'undefined' ? exerciseNames : []).map(n => `<option value="${escHtml(n)}">`).join('');
+    try {
+      const data = await api('/api/plans');
+      plans = data.map(p => ({ ...p, days: JSON.parse(p.days) }));
+    } catch { /* keep whatever we already have */ }
+    let saved = null;
+    try { saved = parseInt(localStorage.getItem('activePlanId'), 10); } catch {}
+    if (!plans.some(p => p.id === activePlanId)) {
+      activePlanId = plans.some(p => p.id === saved) ? saved : (plans[0] ? plans[0].id : null);
+    }
+    drawPlans();
+  }
+
+  function drawPlans() {
+    const root = document.getElementById('plans-root');
+    const plan = curPlan();
+    if (!plan) {
+      root.innerHTML = `<div class="plan-empty"><p>No workout plans yet.<br>Build one with your exercises, sets, reps and rest times.</p>
+        <button class="btn btn-primary" onclick="newPlan()">+ Create your first plan</button></div>`;
+      return;
+    }
+    if (activeDayIdx >= plan.days.length) activeDayIdx = 0;
+    const day = plan.days[activeDayIdx];
+
+    let html = `<div class="plan-toolbar">
+      <select onchange="selectPlan(this.value)">${plans.map(p => `<option value="${p.id}" ${p.id === plan.id ? 'selected' : ''}>${escHtml(p.name)}</option>`).join('')}</select>
+      <button class="plan-icon-btn" onclick="newPlan()" title="New plan">+</button>
+    </div>`;
+
+    html += `<div class="plan-days">${plan.days.map((d, i) =>
+      `<button class="plan-day${i === activeDayIdx ? ' active' : ''}" onclick="selectDay(${i})">${escHtml(d.name)}</button>`).join('')}
+      ${planEditing ? '<button class="plan-day plan-day-add" onclick="addDay()">+ Day</button>' : ''}</div>`;
+
+    html += `<div class="plan-actions"><button class="btn btn-secondary btn-small" onclick="togglePlanEdit()">${planEditing ? 'Done' : 'Edit plan'}</button></div>`;
+
+    if (planEditing) {
+      html += `<div class="plan-edit-box">
+        <label style="margin-top:0">Plan name</label>
+        <input type="text" value="${escHtml(plan.name)}" oninput="renamePlan(this.value)" />
+        <label>Workout name</label>
+        <input type="text" value="${escHtml(day.name)}" oninput="renameDay(this.value)" />
+        <div class="plan-edit-actions">
+          ${plan.days.length > 1 ? '<button class="btn btn-secondary btn-small" onclick="deleteDay()">Delete workout</button>' : ''}
+          <button class="btn btn-danger btn-small" onclick="deletePlan()">Delete plan</button>
+        </div>
+      </div>`;
+    }
+
+    html += day.exercises.map((e, i) => planEditing ? planCardEdit(e, i, day.exercises.length) : planCardView(e, i)).join('');
+
+    if (planEditing) {
+      html += `<button class="btn btn-secondary" style="width:100%" onclick="addPlanExercise()">+ Add exercise</button>`;
+    } else if (day.exercises.length) {
+      html += `<button class="btn btn-primary plan-log-btn" onclick="logPlanWorkout()">Log This Workout</button>`;
+    } else {
+      html += `<div class="plan-empty"><p>No exercises in this workout yet.</p></div>`;
+    }
+    root.innerHTML = html;
+  }
+
+  function planCardView(e, i) {
+    const letter = String.fromCharCode(65 + (i % 26));
+    const chips = [];
+    if (e.sets) chips.push(`Sets: ${escHtml(e.sets)}`);
+    if (e.reps) chips.push(`Reps: ${escHtml(e.reps)}`);
+    if (e.rest) chips.push(`Rest: ${fmtRest(e.rest)}`);
+    return `<div class="plan-card">
+      <div class="plan-card-top">
+        <div class="plan-card-main">
+          <div class="plan-ex-name">${escHtml(e.name) || '(unnamed)'}</div>
+          <div class="plan-chips">${chips.map(c => `<span class="plan-chip">${c}</span>`).join('')}</div>
+        </div>
+        <div class="plan-letter">${letter}</div>
+      </div>
+      ${e.notes ? `<div class="plan-notes" onclick="this.classList.toggle('open')"><div class="plan-notes-text">${escHtml(e.notes)}</div><span class="chev">▾</span></div>` : ''}
+      ${/^https?:\/\//i.test(e.video || '') ? `<a class="plan-video" href="${escHtml(e.video)}" target="_blank" rel="noopener">▶ Watch video</a>` : ''}
+    </div>`;
+  }
+
+  function planCardEdit(e, i, n) {
+    const letter = String.fromCharCode(65 + (i % 26));
+    const rest = parseInt(e.rest, 10) || 0;
+    const restOpts = [...new Set([...REST_OPTIONS, ...(rest ? [rest] : [])])].sort((a, b) => a - b);
+    return `<div class="plan-card plan-card-edit">
+      <div class="plan-card-top">
+        <div class="plan-letter">${letter}</div>
+        <input type="text" list="plan-ex-names" placeholder="Exercise name" value="${escHtml(e.name)}" oninput="planField(${i},'name',this.value)" />
+      </div>
+      <div class="plan-edit-grid">
+        <div><label>Sets</label><input type="number" inputmode="numeric" min="1" value="${escHtml(e.sets)}" oninput="planField(${i},'sets',this.value)" /></div>
+        <div><label>Reps</label><input type="text" placeholder="e.g. 6-10" value="${escHtml(e.reps)}" oninput="planField(${i},'reps',this.value)" /></div>
+        <div><label>Rest</label><select onchange="planField(${i},'rest',this.value)">
+          <option value="0" ${rest ? '' : 'selected'}>None</option>
+          ${restOpts.map(s => `<option value="${s}" ${s === rest ? 'selected' : ''}>${fmtRest(s)}</option>`).join('')}
+        </select></div>
+      </div>
+      <label>Notes</label>
+      <textarea placeholder="Form cues, tips..." oninput="planField(${i},'notes',this.value)">${escHtml(e.notes)}</textarea>
+      <label>Video link (optional)</label>
+      <input type="url" placeholder="https://..." value="${escHtml(e.video)}" oninput="planField(${i},'video',this.value)" />
+      <div class="plan-edit-actions">
+        <button class="btn btn-secondary btn-small" onclick="movePlanExercise(${i},-1)" ${i === 0 ? 'disabled' : ''}>↑</button>
+        <button class="btn btn-secondary btn-small" onclick="movePlanExercise(${i},1)" ${i === n - 1 ? 'disabled' : ''}>↓</button>
+        <button class="btn btn-danger btn-small" onclick="removePlanExercise(${i})">Remove</button>
+      </div>
+    </div>`;
+  }
+
+  function schedulePlanSave() {
+    clearTimeout(planSaveTimer);
+    planSaveTimer = setTimeout(flushPlanSave, 500);
+  }
+
+  async function flushPlanSave() {
+    clearTimeout(planSaveTimer);
+    planSaveTimer = null;
+    const p = curPlan();
+    if (!p) return;
+    try {
+      await api('/api/plans', { method: 'POST', body: JSON.stringify({ id: p.id, name: p.name, days: p.days }) });
+    } catch {
+      showToast('Failed to save plan. Try again.', '#dc2626');
+    }
+  }
+
+  function planField(i, key, val) {
+    const day = curDay();
+    day.exercises[i][key] = key === 'rest' ? (parseInt(val, 10) || 0) : val;
+    schedulePlanSave();
+  }
+
+  function renamePlan(val) {
+    const p = curPlan();
+    p.name = val.trim() || p.name;
+    schedulePlanSave();
+  }
+
+  function renameDay(val) {
+    const d = curDay();
+    d.name = val.trim() || d.name;
+    schedulePlanSave();
+  }
+
+  async function newPlan() {
+    if (planSaveTimer) await flushPlanSave();
+    const name = (prompt('Name your plan (e.g. 3-4 Day PPLF)') || '').trim();
+    if (!name) return;
+    const plan = { id: Date.now(), name, days: [{ name: 'Day 1', exercises: [] }] };
+    plans.push(plan);
+    selectPlanId(plan.id);
+    planEditing = true;
+    await flushPlanSave();
+    drawPlans();
+  }
+
+  function selectPlanId(id) {
+    activePlanId = id;
+    activeDayIdx = 0;
+    try { localStorage.setItem('activePlanId', String(id)); } catch {}
+  }
+
+  function selectPlan(val) {
+    if (planSaveTimer) flushPlanSave();
+    selectPlanId(parseInt(val, 10));
+    drawPlans();
+  }
+
+  function selectDay(i) {
+    activeDayIdx = i;
+    drawPlans();
+  }
+
+  function addDay() {
+    const p = curPlan();
+    p.days.push({ name: `Day ${p.days.length + 1}`, exercises: [] });
+    activeDayIdx = p.days.length - 1;
+    schedulePlanSave();
+    drawPlans();
+  }
+
+  function deleteDay() {
+    const p = curPlan();
+    if (p.days.length < 2 || !confirm(`Delete "${curDay().name}" from this plan?`)) return;
+    p.days.splice(activeDayIdx, 1);
+    activeDayIdx = 0;
+    schedulePlanSave();
+    drawPlans();
+  }
+
+  async function deletePlan() {
+    const p = curPlan();
+    if (!confirm(`Delete the plan "${p.name}"? This can't be undone.`)) return;
+    clearTimeout(planSaveTimer);
+    planSaveTimer = null;
+    try {
+      await api(`/api/plans/${p.id}`, { method: 'DELETE' });
+    } catch {
+      showToast('Failed to delete. Try again.', '#dc2626');
+      return;
+    }
+    plans = plans.filter(x => x.id !== p.id);
+    planEditing = false;
+    selectPlanId(plans[0] ? plans[0].id : null);
+    drawPlans();
+  }
+
+  async function togglePlanEdit() {
+    if (planEditing && planSaveTimer) await flushPlanSave();
+    planEditing = !planEditing;
+    drawPlans();
+  }
+
+  function addPlanExercise() {
+    curDay().exercises.push({ name: '', sets: '3', reps: '8-12', rest: 120, notes: '', video: '' });
+    schedulePlanSave();
+    drawPlans();
+  }
+
+  function removePlanExercise(i) {
+    curDay().exercises.splice(i, 1);
+    schedulePlanSave();
+    drawPlans();
+  }
+
+  function movePlanExercise(i, dir) {
+    const ex = curDay().exercises;
+    const j = i + dir;
+    if (j < 0 || j >= ex.length) return;
+    [ex[i], ex[j]] = [ex[j], ex[i]];
+    schedulePlanSave();
+    drawPlans();
+  }
+
+  // Pre-fill the Log page from the selected workout (reps target uses the low end of the range)
+  function logPlanWorkout() {
+    const plan = curPlan();
+    const day = curDay();
+    showPage('log');
+    clearForm();
+    document.getElementById('exercise-list').innerHTML = '';
+    day.exercises.filter(e => e.name.trim()).forEach(e => {
+      const firstRep = (String(e.reps).match(/\d+/) || [''])[0];
+      addExerciseRow(e.name.trim(), e.sets || '', firstRep, '');
+    });
+    document.getElementById('workout-notes').value = `${plan.name} - ${day.name}`;
   }
 
   // --- History Page ---
