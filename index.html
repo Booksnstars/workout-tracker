@@ -152,6 +152,9 @@
     .wk-val.met { color: #16a34a; }
     .wk-val.over { color: #dc2626; }
     .wk-muted { color: #9ca3af; font-size: 0.8rem; }
+    .goal-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
+    .goal-row label { margin: 0; font-size: 0.9rem; color: #374151; }
+    .goal-row input { width: 130px; flex: 0 0 auto; text-align: right; }
     .wk-link { background: none; border: none; color: #f97316; font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 0; }
 
     .page { display: none; padding: 20px; max-width: 700px; margin: 0 auto; }
@@ -837,12 +840,10 @@
   <div id="week-root"></div>
   <details id="week-goals" class="wk-card">
     <summary style="font-weight:600;cursor:pointer;color:#1f2937;">Your goals</summary>
-    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;">
-      <div><label style="margin-top:0">Calories (daily limit)</label><input type="number" id="goal-kcal" min="500" inputmode="numeric" /></div>
-      <div><label style="margin-top:0">Protein (g)</label><input type="number" id="goal-protein" min="10" inputmode="numeric" /></div>
-      <div><label style="margin-top:0">Steps</label><input type="number" id="goal-steps" min="500" inputmode="numeric" /></div>
-    </div>
-    <button class="btn btn-primary" style="margin-top:12px;" onclick="saveWeekGoals()">Save goals</button>
+    <div class="goal-row"><label for="goal-kcal">Calories (daily limit)</label><input type="number" id="goal-kcal" min="500" inputmode="numeric" /></div>
+    <div class="goal-row"><label for="goal-protein">Protein (g)</label><input type="number" id="goal-protein" min="10" inputmode="numeric" /></div>
+    <div class="goal-row"><label for="goal-steps">Steps</label><input type="number" id="goal-steps" min="500" inputmode="numeric" /></div>
+    <button class="btn btn-primary" style="margin-top:14px;width:100%;" onclick="saveWeekGoals()">Save goals</button>
   </details>
 </div>
 
