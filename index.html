@@ -731,6 +731,9 @@
 
       /* Toast above iOS home bar */
       .toast { bottom: 40px; }
+
+      /* 16px stops iOS Safari zooming the page when a field is focused */
+      input, select, textarea { font-size: 16px; }
     }
   </style>
 </head>
@@ -1041,7 +1044,7 @@
   <div class="nf-sub"><span>Amount</span></div>
   <div style="display:flex;align-items:center;gap:8px;">
     <input type="number" id="nutr-qty" placeholder="e.g. 1" min="0" step="any" inputmode="decimal" oninput="calcFoodNutrition()" onfocus="calcFoodNutrition()" style="flex:1;" />
-    <select id="nutr-unit-select" onchange="onUnitChange()" style="width:auto;min-width:80px;flex:0 0 auto;"></select>
+    <select id="nutr-unit-select" onchange="onUnitChange()" style="width:130px;flex:0 0 auto;"></select>
   </div>
   <div class="nf-stats">
     <div class="nf-stat nf-k"><input type="number" id="nutr-kcal" placeholder="—" min="0" inputmode="numeric" readonly />kcal</div>
@@ -1818,8 +1821,8 @@
   function addFoodTo(t) {
     setMealType(t, true);
     const search = document.getElementById('nutr-food-search');
-    document.getElementById('add-food-card').scrollIntoView({ behavior: 'smooth' });
-    search.focus();
+    document.getElementById('add-food-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    search.focus({ preventScroll: true });
   }
 
   function toggleMealGroup(t) {
@@ -3367,7 +3370,7 @@
       el.style.background = readonly ? 'transparent' : '#fff';
     });
     const link = document.getElementById('nutr-edit-values');
-    if (link) link.style.display = readonly ? '' : 'none';
+    if (link) link.style.visibility = readonly ? 'visible' : 'hidden';
   }
 
   function clearNutritionFields() {
