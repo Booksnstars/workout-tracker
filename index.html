@@ -155,6 +155,10 @@
     .goal-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
     .goal-row label { margin: 0; font-size: 0.9rem; color: #374151; }
     .goal-row input { width: 130px; flex: 0 0 auto; text-align: right; }
+    .wk-row.click { grid-template-columns: 44px minmax(0, 1fr) 12px; cursor: pointer; }
+    .wk-row.click:active { background: #f9fafb; }
+    .wk-row.today.click:active { background: #dbeafe; }
+    .wk-chev { color: #9ca3af; font-size: 1.1rem; }
     .wk-link { background: none; border: none; color: #f97316; font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 0; }
 
     .page { display: none; padding: 20px; max-width: 700px; margin: 0 auto; }
@@ -921,7 +925,7 @@
 
 <!-- NUTRITION PAGE -->
 <div id="page-nutrition" class="page">
-  <div class="page-header"><button class="back-btn" onclick="showPage('home')">←</button><h2>Nutrition</h2></div>
+  <div class="page-header"><button class="back-btn" onclick="nutritionBack()">←</button><h2>Nutrition</h2><button id="nutrition-home-btn" class="wk-link" style="margin-left:auto;display:none;" onclick="nutritionGoHome()">Home</button></div>
   <div class="date-nav">
     <button onclick="changeNutritionDay(-1)">&#8592;</button>
     <div>
@@ -1170,7 +1174,9 @@
     if (name === 'home') fetchHomeHealth();
     if (name === 'history') renderHistory();
     if (name === 'plans') { planEditing = false; renderPlansPage(); }
-    if (name === 'week') renderWeekPage();
+    if (name === 'week') { nutritionFrom = null; renderWeekPage(); }
+    if (name === 'home') nutritionFrom = null;
+    document.getElementById('nutrition-home-btn').style.display = (name === 'nutrition' && nutritionFrom === 'week') ? '' : 'none';
     if (name === 'stats') renderStats();
     if (name === 'calendar') renderCalendar();
     if (name === 'nutrition') { renderNutritionPage(); renderSavedMealsPage(); }
@@ -1596,6 +1602,22 @@
   const shortDate = ds => new Date(ds + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
   function openWeek() { weekOffset = 0; showPage('week'); }
+
+  // Tapping a day opens the daily Nutrition page on that date; its back arrow returns to the same week
+  let nutritionFrom = null;
+  function openDayFromWeek(ds) {
+    nutritionDayOffset = Math.round((Date.parse(ds + 'T12:00:00Z') - Date.parse(offsetDate(0) + 'T12:00:00Z')) / 86400000);
+    nutritionFrom = 'week';
+    showPage('nutrition');
+  }
+  function nutritionBack() {
+    nutritionDayOffset = 0;
+    showPage(nutritionFrom === 'week' ? 'week' : 'home');
+  }
+  function nutritionGoHome() {
+    nutritionDayOffset = 0;
+    showPage('home');
+  }
   function changeWeek(delta) { weekOffset = Math.min(0, weekOffset + delta); renderWeekPage(); }
 
   function fillGoalInputs() {
@@ -1712,9 +1734,10 @@
           lines += '<div class="wk-line wk-muted">No steps data</div>';
         }
       }
-      html += `<div class="wk-row${isToday ? ' today' : ''}">
+      html += `<div class="wk-row${isToday ? ' today' : ''}${future ? '' : ' click'}"${future ? '' : ` onclick="openDayFromWeek('${d}')"`}>
         <div><div class="wk-day"${future ? ' style="color:#9ca3af"' : ''}>${wd}</div><div class="wk-date">${isToday ? 'Today' : dn}</div></div>
         <div>${lines}</div>
+        ${future ? '' : '<span class="wk-chev">›</span>'}
       </div>`;
     });
     html += '</div>';
