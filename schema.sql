@@ -110,3 +110,11 @@ CREATE TABLE IF NOT EXISTS workout_plans (
   days TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS user_goals (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id),
+  kcal INTEGER NOT NULL,
+  protein INTEGER NOT NULL,
+  steps INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);

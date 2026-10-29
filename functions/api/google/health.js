@@ -54,9 +54,10 @@ export async function onRequestGet(context) {
   const nextDay = new Date(year, month - 1, day + 1);
   const endDate = { year: nextDay.getFullYear(), month: nextDay.getMonth() + 1, day: nextDay.getDate() };
 
+  const stepsOnly = url.searchParams.get('steps_only') === '1';
   const [steps, calories] = await Promise.all([
     fetchHealthData(token, 'steps', startDate, endDate),
-    fetchHealthData(token, 'total-calories', startDate, endDate),
+    stepsOnly ? Promise.resolve({ value: 0 }) : fetchHealthData(token, 'total-calories', startDate, endDate),
   ]);
 
   if (debug) {

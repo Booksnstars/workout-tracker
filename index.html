@@ -120,6 +120,40 @@
     .plan-instructions { white-space: pre-wrap; color: #374151; font-size: 0.95rem; line-height: 1.5; }
     .plan-log-btn { width: 100%; padding: 16px; font-size: 1.05rem; border-radius: 14px; margin-top: 4px; }
 
+    /* Weekly nutrition summary */
+    .wk-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+    .wk-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .wk-nav button { background: none; border: none; color: #f97316; font-size: 1.3rem; cursor: pointer; padding: 0 8px; }
+    .wk-nav button:disabled { opacity: 0.3; cursor: default; }
+    .wk-title { font-weight: 600; color: #1f2937; font-size: 0.95rem; text-align: center; }
+    .wk-sub { font-size: 0.75rem; color: #6b7280; text-align: center; }
+    .wk-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+    .wk-tile { border-radius: 10px; padding: 10px 6px; text-align: center; }
+    .wk-tile .l { font-size: 0.75rem; color: #6b7280; }
+    .wk-tile .v { font-size: 1.2rem; font-weight: 700; margin: 2px 0; }
+    .wk-tile .g { font-size: 0.7rem; color: #6b7280; }
+    .wk-tile-kcal { background: #ffedd5; } .wk-tile-kcal .v { color: #c2410c; }
+    .wk-tile-prot { background: #dbeafe; } .wk-tile-prot .v { color: #1d4ed8; }
+    .wk-tile-steps { background: #dcfce7; } .wk-tile-steps .v { color: #15803d; }
+    .wk-note { font-size: 0.72rem; color: #9ca3af; margin-bottom: 10px; }
+    .wk-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.75rem; color: #6b7280; margin-bottom: 2px; }
+    .wk-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+    .wk-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; padding: 10px 0; border-top: 1px solid #f3f4f6; align-items: center; }
+    .wk-row.today { background: #eff6ff; margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
+    .wk-day { font-weight: 600; font-size: 0.9rem; color: #1f2937; }
+    .wk-date { font-size: 0.75rem; color: #6b7280; }
+    .wk-line { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
+    .wk-line + .wk-line { margin-top: 6px; }
+    .wk-track { position: relative; flex: 1; height: 8px; border-radius: 4px; background: #f3f4f6; }
+    .wk-row.today .wk-track { background: #ffffff; }
+    .wk-fill { height: 8px; border-radius: 4px; }
+    .wk-goal { position: absolute; top: -3px; width: 2px; height: 14px; background: #6b7280; opacity: 0.6; border-radius: 1px; }
+    .wk-val { width: 84px; text-align: right; color: #374151; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .wk-val.met { color: #16a34a; }
+    .wk-val.over { color: #dc2626; }
+    .wk-muted { color: #9ca3af; font-size: 0.8rem; }
+    .wk-link { background: none; border: none; color: #f97316; font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 0; }
+
     .page { display: none; padding: 20px; max-width: 700px; margin: 0 auto; }
     .page.active { display: block; }
 
@@ -797,6 +831,21 @@
   <div id="plans-root"></div>
 </div>
 
+<!-- WEEKLY SUMMARY PAGE -->
+<div id="page-week" class="page">
+  <div class="page-header"><button class="back-btn" onclick="showPage('nutrition')">←</button><h2>Weekly summary</h2></div>
+  <div id="week-root"></div>
+  <details id="week-goals" class="wk-card">
+    <summary style="font-weight:600;cursor:pointer;color:#1f2937;">Your goals</summary>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;">
+      <div><label style="margin-top:0">Calories (daily limit)</label><input type="number" id="goal-kcal" min="500" inputmode="numeric" /></div>
+      <div><label style="margin-top:0">Protein (g)</label><input type="number" id="goal-protein" min="10" inputmode="numeric" /></div>
+      <div><label style="margin-top:0">Steps</label><input type="number" id="goal-steps" min="500" inputmode="numeric" /></div>
+    </div>
+    <button class="btn btn-primary" style="margin-top:12px;" onclick="saveWeekGoals()">Save goals</button>
+  </details>
+</div>
+
 <!-- HISTORY PAGE -->
 <div id="page-history" class="page">
   <div class="page-header"><button class="back-btn" onclick="showPage('home')">←</button><h2>History</h2></div>
@@ -880,6 +929,7 @@
     </div>
     <button onclick="changeNutritionDay(1)">&#8594;</button>
   </div>
+  <div style="text-align:center;margin:-6px 0 14px;"><button class="btn btn-secondary btn-small" onclick="openWeek()">Weekly summary</button></div>
 
   <div class="nutrition-dashboard">
     <div class="ring-container">
@@ -1119,6 +1169,7 @@
     if (name === 'home') fetchHomeHealth();
     if (name === 'history') renderHistory();
     if (name === 'plans') { planEditing = false; renderPlansPage(); }
+    if (name === 'week') renderWeekPage();
     if (name === 'stats') renderStats();
     if (name === 'calendar') renderCalendar();
     if (name === 'nutrition') { renderNutritionPage(); renderSavedMealsPage(); }
@@ -1513,6 +1564,160 @@
       addExerciseRow(e.name.trim(), e.sets || '', firstRep, '');
     });
     document.getElementById('workout-notes').value = `${plan.name} - ${day.name}`;
+  }
+
+  // --- Weekly summary ---
+  let weekOffset = 0;
+  let weekRenderToken = 0;
+  let goalsLoaded = false;
+
+  async function loadGoals() {
+    if (goalsLoaded) return;
+    try {
+      const g = await api('/api/goals');
+      if (g) { goals.kcal = g.kcal; goals.protein = g.protein; goals.steps = g.steps; }
+      goalsLoaded = true;
+    } catch {}
+  }
+
+  // Same UTC-based date strings the daily nutrition page uses, Monday first
+  function weekDates(offset) {
+    const t = new Date(offsetDate(0) + 'T12:00:00Z');
+    t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7) + offset * 7);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(t);
+      d.setUTCDate(t.getUTCDate() + i);
+      return d.toISOString().split('T')[0];
+    });
+  }
+
+  const fmtN = n => Math.round(n).toLocaleString('en-GB');
+  const shortDate = ds => new Date(ds + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+  function openWeek() { weekOffset = 0; showPage('week'); }
+  function changeWeek(delta) { weekOffset = Math.min(0, weekOffset + delta); renderWeekPage(); }
+
+  function fillGoalInputs() {
+    document.getElementById('goal-kcal').value = goals.kcal;
+    document.getElementById('goal-protein').value = goals.protein;
+    document.getElementById('goal-steps').value = goals.steps;
+  }
+
+  async function saveWeekGoals() {
+    const kcal = parseInt(document.getElementById('goal-kcal').value, 10);
+    const protein = parseInt(document.getElementById('goal-protein').value, 10);
+    const steps = parseInt(document.getElementById('goal-steps').value, 10);
+    if (!(kcal >= 500 && protein >= 10 && steps >= 500)) { showToast('Enter a value for each goal.', '#dc2626'); return; }
+    try {
+      await api('/api/goals', { method: 'POST', body: JSON.stringify({ kcal, protein, steps }) });
+    } catch { showToast('Failed to save goals. Try again.', '#dc2626'); return; }
+    goals.kcal = kcal; goals.protein = protein; goals.steps = steps;
+    goalsLoaded = true;
+    document.getElementById('week-goals').open = false;
+    showToast('Goals saved');
+    renderWeekPage();
+  }
+
+  function wkLine(value, goal, scale, color, text, cls) {
+    const w = Math.min(value / scale * 100, 100);
+    return `<div class="wk-line"><div class="wk-track"><div class="wk-fill" style="width:${w}%;background:${color}"></div><div class="wk-goal" style="left:${Math.min(goal / scale * 100, 100)}%"></div></div><span class="wk-val ${cls}">${text}</span></div>`;
+  }
+
+  async function renderWeekPage() {
+    const token = ++weekRenderToken;
+    const root = document.getElementById('week-root');
+    const dates = weekDates(weekOffset);
+    const today = offsetDate(0);
+    root.innerHTML = '<div class="wk-muted" style="text-align:center;padding:24px;">Loading…</div>';
+
+    await loadGoals();
+    fillGoalInputs();
+    let meals = [];
+    try { meals = await api('/api/nutrition'); } catch {}
+    const day = {};
+    dates.forEach(d => { day[d] = { kcal: 0, protein: 0, n: 0, steps: null }; });
+    meals.forEach(m => {
+      const e = day[m.date];
+      if (e) { e.kcal += m.kcal || 0; e.protein += m.protein || 0; e.n++; }
+    });
+    let connected = true;
+    await Promise.all(dates.filter(d => d <= today).map(async d => {
+      try {
+        const h = await api(`/api/google/health?date=${d}&steps_only=1`);
+        if (!h.connected) { connected = false; return; }
+        const v = h.steps && h.steps.value;
+        day[d].steps = v > 0 ? v : null;
+      } catch {}
+    }));
+    if (token !== weekRenderToken) return; // a newer render took over
+
+    // Averages: completed days only (today is left out until it's over)
+    const done = dates.filter(d => d < today).map(d => day[d]);
+    const avg = (list, f) => list.length ? list.reduce((s, x) => s + f(x), 0) / list.length : null;
+    const aK = avg(done.filter(x => x.n > 0), x => x.kcal);
+    const aP = avg(done.filter(x => x.n > 0), x => x.protein);
+    const aS = avg(done.filter(x => x.steps != null), x => x.steps);
+
+    const all = dates.map(d => day[d]);
+    const sK = Math.max(goals.kcal * 1.25, ...all.map(x => x.kcal));
+    const sP = Math.max(goals.protein * 1.25, ...all.map(x => x.protein));
+    const sS = Math.max(goals.steps * 1.25, ...all.map(x => x.steps || 0));
+
+    const range = `${shortDate(dates[0])} – ${shortDate(dates[6])}`;
+    const title = weekOffset === 0 ? 'This week' : weekOffset === -1 ? 'Last week' : range;
+
+    let html = `<div class="wk-card">
+      <div class="wk-nav">
+        <button onclick="changeWeek(-1)" aria-label="Previous week">&#8592;</button>
+        <div><div class="wk-title">${title}</div><div class="wk-sub">${range}</div></div>
+        <button onclick="changeWeek(1)" aria-label="Next week" ${weekOffset >= 0 ? 'disabled' : ''}>&#8594;</button>
+      </div>
+      <div class="wk-tiles">
+        <div class="wk-tile wk-tile-kcal"><div class="l">Avg calories</div><div class="v">${aK == null ? '—' : fmtN(aK)}</div><div class="g">limit ${fmtN(goals.kcal)}</div></div>
+        <div class="wk-tile wk-tile-prot"><div class="l">Avg protein</div><div class="v">${aP == null ? '—' : Math.round(aP) + ' g'}</div><div class="g">goal ${goals.protein} g</div></div>
+        <div class="wk-tile wk-tile-steps"><div class="l">Avg steps</div><div class="v">${aS == null ? '—' : fmtN(aS)}</div><div class="g">goal ${fmtN(goals.steps)}</div></div>
+      </div>
+      <div class="wk-note">Averages cover completed days with data. Today is left out until it's over.${connected ? '' : ' Connect Google Health on the Nutrition page to see steps.'}</div>
+      <div style="text-align:right;margin-bottom:6px;"><button class="wk-link" onclick="const g=document.getElementById('week-goals');g.open=true;g.scrollIntoView({behavior:'smooth'})">Edit goals</button></div>
+      <div class="wk-legend">
+        <span><i style="background:#fdba74"></i>Calories</span>
+        <span><i style="background:#93c5fd"></i>Protein</span>
+        <span><i style="background:#86efac"></i>Steps</span>
+        <span><i style="background:#6b7280;width:2px;height:12px;opacity:0.6"></i>Goal</span>
+      </div>`;
+
+    dates.forEach(d => {
+      const v = day[d];
+      const wd = new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' });
+      const dn = new Date(d + 'T12:00:00Z').getUTCDate();
+      const isToday = d === today;
+      const future = d > today;
+      let lines = '';
+      if (future) {
+        lines = '<div class="wk-muted">—</div>';
+      } else {
+        if (v.n === 0) {
+          lines += '<div class="wk-line wk-muted">No meals logged</div>';
+        } else {
+          const over = v.kcal > goals.kcal;
+          lines += wkLine(v.kcal, goals.kcal, sK, over ? '#fca5a5' : '#fdba74', `${fmtN(v.kcal)} kcal`, over ? 'over' : '');
+          const pMet = v.protein >= goals.protein;
+          lines += wkLine(v.protein, goals.protein, sP, '#93c5fd', `${Math.round(v.protein)} g${pMet ? ' ✓' : ''}`, pMet ? 'met' : '');
+        }
+        if (v.steps != null) {
+          const sMet = v.steps >= goals.steps;
+          lines += wkLine(v.steps, goals.steps, sS, '#86efac', `${fmtN(v.steps)}${sMet ? ' ✓' : ''}`, sMet ? 'met' : '');
+        } else if (connected && !isToday) {
+          lines += '<div class="wk-line wk-muted">No steps data</div>';
+        }
+      }
+      html += `<div class="wk-row${isToday ? ' today' : ''}">
+        <div><div class="wk-day"${future ? ' style="color:#9ca3af"' : ''}>${wd}</div><div class="wk-date">${isToday ? 'Today' : dn}</div></div>
+        <div>${lines}</div>
+      </div>`;
+    });
+    html += '</div>';
+    root.innerHTML = html;
   }
 
   // --- History Page ---
@@ -2928,7 +3133,8 @@
   }
 
   // --- Nutrition ---
-  const GOAL_KCAL = 1600, GOAL_PROTEIN = 110, GOAL_CARBS = 160, GOAL_FAT = 55;
+  // Defaults; kcal (daily limit), protein and steps are saved per user via /api/goals
+  const goals = { kcal: 1600, protein: 110, carbs: 160, fat: 55, steps: 8000 };
   let nutritionDayOffset = 0;
 
   function offsetDate(offset) {
@@ -2970,19 +3176,20 @@
     sub.textContent = dateStr;
 
     fetchGoogleHealth(dateStr);
+    await loadGoals();
     const meals = await loadNutrition(dateStr);
 
     const totKcal   = meals.reduce((s, m) => s + (m.kcal || 0), 0);
     const totProt   = meals.reduce((s, m) => s + (m.protein || 0), 0);
     const totCarbs  = meals.reduce((s, m) => s + (m.carbs || 0), 0);
     const totFat    = meals.reduce((s, m) => s + (m.fat || 0), 0);
-    const remaining = GOAL_KCAL - totKcal;
+    const remaining = goals.kcal - totKcal;
 
     const circ = 364.4;
-    const pct = Math.min(totKcal / GOAL_KCAL, 1);
+    const pct = Math.min(totKcal / goals.kcal, 1);
     const ring = document.getElementById('calorie-ring');
     ring.style.strokeDashoffset = circ - pct * circ;
-    ring.className = 'ring-fill' + (totKcal > GOAL_KCAL ? ' over' : '');
+    ring.className = 'ring-fill' + (totKcal > goals.kcal ? ' over' : '');
 
     document.getElementById('ring-kcal-consumed').textContent = totKcal;
     document.getElementById('ring-kcal-remaining').textContent =
@@ -2991,9 +3198,9 @@
     document.getElementById('dash-protein').textContent = Math.round(totProt) + 'g';
     document.getElementById('dash-carbs').textContent   = Math.round(totCarbs) + 'g';
     document.getElementById('dash-fat').textContent     = Math.round(totFat) + 'g';
-    document.getElementById('bar-protein').style.width  = Math.min(totProt  / GOAL_PROTEIN * 100, 100) + '%';
-    document.getElementById('bar-carbs').style.width    = Math.min(totCarbs / GOAL_CARBS   * 100, 100) + '%';
-    document.getElementById('bar-fat').style.width      = Math.min(totFat   / GOAL_FAT     * 100, 100) + '%';
+    document.getElementById('bar-protein').style.width  = Math.min(totProt  / goals.protein * 100, 100) + '%';
+    document.getElementById('bar-carbs').style.width    = Math.min(totCarbs / goals.carbs   * 100, 100) + '%';
+    document.getElementById('bar-fat').style.width      = Math.min(totFat   / goals.fat     * 100, 100) + '%';
 
     const typeLabel = {
       breakfast: 'Breakfast', 'snack-am': 'Snack AM', lunch: 'Lunch',
