@@ -106,7 +106,11 @@
     .plan-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .plan-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.6rem; background: rgba(0,0,0,0.2); }
     .plan-player { display: none; margin-top: 12px; }
-    .plan-player iframe { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 10px; display: block; background: #000; }
+    .plan-vwrap { position: relative; border-radius: 10px; overflow: hidden; background: #000; }
+    .plan-vwrap iframe { width: 100%; aspect-ratio: 16 / 9; border: 0; display: block; pointer-events: none; }
+    .plan-vtap { position: absolute; inset: 0; background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+    .plan-vicon { width: 64px; height: 64px; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s; }
+    .plan-vtap.paused .plan-vicon { opacity: 1; }
     .plan-player-close { background: none; border: none; color: #6b7280; font-size: 0.85rem; font-weight: 600; cursor: pointer; padding: 8px 0 0; }
     .plan-video { display: inline-block; margin-top: 10px; font-size: 0.85rem; color: #3b82f6; text-decoration: none; font-weight: 600; }
     .plan-card-edit .plan-card-top input { flex: 1; font-weight: 600; }
@@ -1429,13 +1433,48 @@
     return m ? m[1] : null;
   }
 
+  // The video plays inside the card. Our own tap layer sits over the player (controls are hidden),
+  // so a tap pauses/plays and can never open YouTube; short demos loop.
   function playPlanVideo(btn, id) {
     const card = btn.closest('.plan-card');
     const box = card.querySelector('.plan-player');
-    box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="Exercise video"></iframe><button class="plan-player-close" onclick="closePlanVideo(this)">Close video</button>`;
+    const params = `autoplay=1&playsinline=1&controls=0&rel=0&modestbranding=1&loop=1&playlist=${id}&fs=0&disablekb=1&iv_load_policy=3&enablejsapi=1&origin=${encodeURIComponent(location.origin)}`;
+    box.innerHTML = `<div class="plan-vwrap"><iframe src="https://www.youtube-nocookie.com/embed/${id}?${params}" allow="autoplay; encrypted-media; picture-in-picture" title="Exercise video"></iframe><button class="plan-vtap" onclick="togglePlanVideo(this)" aria-label="Pause or play"><span class="plan-vicon">&#9654;</span></button></div><button class="plan-player-close" onclick="closePlanVideo(this)">Close video</button>`;
     box.style.display = 'block';
     btn.style.display = 'none';
+    const frame = box.querySelector('iframe');
+    frame.addEventListener('load', () => frame.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*'));
+    box.querySelector('.plan-vtap').dataset.playing = '1';
   }
+
+  function sendPlayerCommand(frame, func) {
+    frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: '' }), '*');
+  }
+
+  function togglePlanVideo(tap) {
+    const frame = tap.parentNode.querySelector('iframe');
+    const playing = tap.dataset.playing === '1';
+    sendPlayerCommand(frame, playing ? 'pauseVideo' : 'playVideo');
+    tap.dataset.playing = playing ? '0' : '1';
+    tap.classList.toggle('paused', playing);
+  }
+
+  // Keep the pause/play icon in step with the real player state
+  window.addEventListener('message', ev => {
+    if (!/youtube(-nocookie)?\.com$/.test(new URL(ev.origin).hostname)) return;
+    let data;
+    try { data = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data; } catch { return; }
+    const state = data && data.info && data.info.playerState;
+    if (data.event !== 'infoDelivery' || state === undefined) return;
+    document.querySelectorAll('.plan-vwrap').forEach(w => {
+      const frame = w.querySelector('iframe');
+      if (frame.contentWindow !== ev.source) return;
+      const tap = w.querySelector('.plan-vtap');
+      const playing = state === 1 || state === 3;
+      tap.dataset.playing = playing ? '1' : '0';
+      tap.classList.toggle('paused', !playing);
+    });
+  });
 
   function closePlanVideo(btn) {
     const card = btn.closest('.plan-card');
