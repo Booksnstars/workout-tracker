@@ -102,6 +102,12 @@
     .plan-notes.open .plan-notes-text { display: block; }
     .plan-notes .chev { color: #6b7280; transition: transform 0.15s; }
     .plan-notes.open .chev { transform: rotate(180deg); }
+    .plan-thumb { position: relative; flex: 0 0 108px; height: 72px; border: none; padding: 0; border-radius: 10px; overflow: hidden; background: #e5e7eb; cursor: pointer; }
+    .plan-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .plan-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.6rem; background: rgba(0,0,0,0.2); }
+    .plan-player { display: none; margin-top: 12px; }
+    .plan-player iframe { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 10px; display: block; background: #000; }
+    .plan-player-close { background: none; border: none; color: #6b7280; font-size: 0.85rem; font-weight: 600; cursor: pointer; padding: 8px 0 0; }
     .plan-video { display: inline-block; margin-top: 10px; font-size: 0.85rem; color: #3b82f6; text-decoration: none; font-weight: 600; }
     .plan-card-edit .plan-card-top input { flex: 1; font-weight: 600; }
     .plan-edit-grid { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 8px; margin-top: 4px; }
@@ -1417,7 +1423,30 @@
     root.innerHTML = html;
   }
 
+  // YouTube video id from a watch / share / shorts / embed link, or null for any other link
+  function ytId(url) {
+    const m = String(url || '').match(/^https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+
+  function playPlanVideo(btn, id) {
+    const card = btn.closest('.plan-card');
+    const box = card.querySelector('.plan-player');
+    box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="Exercise video"></iframe><button class="plan-player-close" onclick="closePlanVideo(this)">Close video</button>`;
+    box.style.display = 'block';
+    btn.style.display = 'none';
+  }
+
+  function closePlanVideo(btn) {
+    const card = btn.closest('.plan-card');
+    const box = card.querySelector('.plan-player');
+    box.innerHTML = '';
+    box.style.display = 'none';
+    card.querySelector('.plan-thumb').style.display = '';
+  }
+
   function planCardView(e, letter) {
+    const vid = ytId(e.video);
     const chips = [];
     if (e.sets) chips.push(`Sets: ${escHtml(e.sets)}`);
     if (e.reps) chips.push(`Reps: ${escHtml(e.reps)}`);
@@ -1427,14 +1456,16 @@
     if (e.time) chips.push(`Time: ${escHtml(e.time)}`);
     return `<div class="plan-card">
       <div class="plan-card-top">
+        ${vid ? `<button class="plan-thumb" onclick="playPlanVideo(this,'${vid}')" aria-label="Play video: ${escHtml(e.name)}"><img src="https://i.ytimg.com/vi/${vid}/mqdefault.jpg" alt="" loading="lazy" /><span class="plan-play">&#9654;</span></button>` : ''}
         <div class="plan-card-main">
           <div class="plan-ex-name">${escHtml(e.name) || '(unnamed)'}</div>
           <div class="plan-chips">${chips.map(c => `<span class="plan-chip">${c}</span>`).join('')}</div>
         </div>
         <div class="plan-letter">${letter}</div>
       </div>
+      <div class="plan-player"></div>
       ${e.notes ? `<div class="plan-notes" onclick="this.classList.toggle('open')"><div class="plan-notes-text">${escHtml(e.notes)}</div><span class="chev">▾</span></div>` : ''}
-      ${/^https?:\/\//i.test(e.video || '') ? `<a class="plan-video" href="${escHtml(e.video)}" target="_blank" rel="noopener">▶ Watch video</a>` : ''}
+      ${!vid && /^https?:\/\//i.test(e.video || '') ? `<a class="plan-video" href="${escHtml(e.video)}" target="_blank" rel="noopener">▶ Watch video</a>` : ''}
     </div>`;
   }
 
