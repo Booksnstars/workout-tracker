@@ -3131,14 +3131,13 @@
     let highlighted = -1;
 
     function getMatches(query) {
-      const q = (query || '').toLowerCase();
+      const q = query.toLowerCase();
       const savedRank = m => m.name.toLowerCase().startsWith(q) ? 1 : 2;
       const saved = _savedMealsCache
-        .filter(m => !q || m.name.toLowerCase().includes(q))
+        .filter(m => m.name.toLowerCase().includes(q))
         .sort((a, b) => savedRank(a) - savedRank(b))
-        .slice(0, q ? 8 : 5)
+        .slice(0, 8)
         .map(m => ({ saved: true, ...m }));
-      if (!query) return [...saved, ...FOOD_DB.slice(0, 20 - saved.length)];
       const matchScore = f => {
         const n = f.name.toLowerCase();
         const a = (f.alt || '').toLowerCase();
@@ -3153,6 +3152,8 @@
     }
 
     function renderDropdown(query) {
+      // Only open once something is typed
+      if (!query) { closeDropdown(); return; }
       const matches = getMatches(query);
       highlighted = -1;
       if (matches.length === 0) { closeDropdown(); return; }
